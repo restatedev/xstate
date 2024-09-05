@@ -25,6 +25,7 @@
     "dist"
   ],
   "scripts": {
+    "clean": "rm -rf dist",
     "build": "npm run build:cjs && npm run build:esm",
     "build:cjs": "tsc --module commonjs --verbatimModuleSyntax false --moduleResolution node10 --outDir ./dist/cjs --declaration --declarationDir ./dist/cjs && echo >./dist/cjs/package.json '{\"type\":\"commonjs\"}'",
     "build:esm": "tsc --outDir ./dist/esm --declaration --declarationDir ./dist/esm",
@@ -43,7 +44,6 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.15.3",
-    "@release-it-plugins/workspaces": "^4.2.0",
     "@types/node": "^20.10.4",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
     "@typescript-eslint/parser": "^7.13.0",
@@ -56,5 +56,17 @@
     "tsx": "^4.19.0",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
+  },
+  "publishConfig": {
+    "@restatedev:registry": "https://registry.npmjs.org"
+  },
+  "release-it": {
+    "git": {
+      "pushRepo": "https://github.com/restatedev/xstate.git"
+    },
+    "github": {
+      "release": true
+    },
+    "npm": false
   }
 }
