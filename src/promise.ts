@@ -12,10 +12,10 @@ import type {
 } from "xstate";
 import {
   serialiseActorRef,
-  type AnyRestateActorSystem,
   type ActorRefEventSender,
+  type RestateActorSystem,
 } from "./lib.js";
-import type { Context } from "@restatedev/restate-sdk";
+import type { ObjectSharedContext } from "@restatedev/restate-sdk";
 
 export type PromiseSnapshot<TOutput, TInput> = Snapshot<TOutput> & {
   input: TInput | undefined;
@@ -32,7 +32,7 @@ export type PromiseCreator<TOutput, TInput extends NonReducibleUnknown> = ({
   ctx,
 }: {
   input: TInput;
-  ctx: Context;
+  ctx: ObjectSharedContext;
 }) => PromiseLike<TOutput>;
 
 export type PromiseActorLogic<TOutput, TInput = unknown> = ActorLogic<
@@ -102,7 +102,7 @@ export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
         return;
       }
 
-      const rs = system as AnyRestateActorSystem;
+      const rs = system as RestateActorSystem<ActorSystemInfo>;
 
       rs.ctx.objectSendClient(rs.api, rs.systemName).invokePromise({
         self: serialiseActorRef(self),

@@ -44,14 +44,11 @@ export interface RestateActorSystem<T extends ActorSystemInfo>
     event: AnyEventObject
   ) => void;
   api: XStateApi<ActorLogicFrom<T>>;
-  ctx: restate.ObjectContext;
+  ctx: restate.ObjectContext<State>;
   systemName: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyRestateActorSystem = RestateActorSystem<any>;
-
-export type SerialisableActorRef = {
+type SerialisableActorRef = {
   id: string;
   sessionId: string;
   _parent?: SerialisableActorRef;
@@ -80,16 +77,19 @@ type SerialisableScheduledEvent = {
   uuid: string;
 };
 
+type State = {
+  events: { [key: string]: SerialisableScheduledEvent };
+  children: { [key: string]: SerialisableActorRef };
+  snapshot: Snapshot<unknown>;
+};
+
 async function createSystem<T extends ActorSystemInfo>(
-  ctx: restate.ObjectContext,
+  ctx: restate.ObjectContext<State>,
   api: XStateApi<ActorLogicFrom<T>>,
   systemName: string
 ): Promise<RestateActorSystem<T>> {
-  const events =
-    (await ctx.get<{ [key: string]: SerialisableScheduledEvent }>("events")) ??
-    {};
-  const childrenByID =
-    (await ctx.get<{ [key: string]: SerialisableActorRef }>("children")) ?? {};
+  const events = (await ctx.get("events")) ?? {};
+  const childrenByID = (await ctx.get("children")) ?? {};
 
   const children = new Map<string, ActorRefEventSender>();
   const keyedActors = new Map<keyof T["actors"], AnyActorRef | undefined>();
@@ -288,15 +288,15 @@ export interface ActorRefEventSender extends AnyActorRef {
   _send: (event: AnyEventObject) => void;
 }
 
-export async function createActor<TLogic extends AnyStateMachine>(
-  ctx: restate.ObjectContext,
+async function createActor<TLogic extends AnyStateMachine>(
+  ctx: restate.ObjectContext<State>,
   api: XStateApi<TLogic>,
   systemName: string,
   logic: TLogic,
   options?: ActorOptions<TLogic>
 ): Promise<ActorEventSender<TLogic>> {
   const system = await createSystem(ctx, api, systemName);
-  const snapshot = (await ctx.get<Snapshot<unknown>>("snapshot")) ?? undefined;
+  const snapshot = (await ctx.get("snapshot")) ?? undefined;
 
   const parent: ActorRefEventSender = {
     id: "fakeRoot",
@@ -361,7 +361,7 @@ const actorObject = <TLogic extends AnyStateMachine>(
     name: path,
     handlers: {
       create: async (
-        ctx: restate.ObjectContext,
+        ctx: restate.ObjectContext<State>,
         request?: { input?: InputFrom<TLogic> }
       ): Promise<Snapshot<unknown>> => {
         const systemName = ctx.key;
@@ -381,7 +381,7 @@ const actorObject = <TLogic extends AnyStateMachine>(
         return root.getPersistedSnapshot();
       },
       send: async (
-        ctx: restate.ObjectContext,
+        ctx: restate.ObjectContext<State>,
         request?: {
           scheduledEvent?: SerialisableScheduledEvent;
           source?: SerialisableActorRef;
@@ -396,10 +396,7 @@ const actorObject = <TLogic extends AnyStateMachine>(
         }
 
         if (request.scheduledEvent) {
-          const events =
-            (await ctx.get<{ [key: string]: SerialisableScheduledEvent }>(
-              "events"
-            )) ?? {};
+          const events = (await ctx.get("events")) ?? {};
           const scheduledEventId = createScheduledEventId(
             request.scheduledEvent.source,
             request.scheduledEvent.id
@@ -430,7 +427,7 @@ const actorObject = <TLogic extends AnyStateMachine>(
 
         let actor;
         if (request.target) {
-          actor = (root.system as AnyRestateActorSystem).actor(
+          actor = (root.system as RestateActorSystem<ActorSystemInfo>).actor(
             request.target.sessionId
           );
           if (!actor) {
@@ -442,7 +439,7 @@ const actorObject = <TLogic extends AnyStateMachine>(
           actor = root;
         }
 
-        (root.system as AnyRestateActorSystem)._relay(
+        (root.system as RestateActorSystem<ActorSystemInfo>)._relay(
           request.source,
           actor,
           request.event
@@ -454,7 +451,7 @@ const actorObject = <TLogic extends AnyStateMachine>(
         return nextSnapshot;
       },
       snapshot: async (
-        ctx: restate.ObjectContext,
+        ctx: restate.ObjectContext<State>,
         systemName: string
       ): Promise<Snapshot<unknown>> => {
         const root = await createActor(ctx, api, systemName, logic);
