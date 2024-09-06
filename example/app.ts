@@ -10,9 +10,8 @@
  */
 
 import * as restate from "@restatedev/restate-sdk";
-
+import { bindXStateRouter, fromPromise } from "@restatedev/xstate";
 import { createMachine, sendTo } from "xstate";
-import { bindXStateRouter, fromPromise } from "../src/public_api.js";
 
 const authServerMachine = createMachine(
   {
