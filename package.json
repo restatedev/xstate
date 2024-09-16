@@ -36,7 +36,7 @@
     "attw": "attw --pack",
     "verify": "npm run format-check && npm run lint && npm run test && npm run build && npm run attw",
     "release": "release-it",
-    "example": "RESTATE_DEBUG_LOGGING=OFF tsx --watch example/app.ts"
+    "auth-example": "tsx --watch examples/auth/app.ts"
   },
   "dependencies": {
     "@restatedev/restate-sdk": "^1.3.0",
