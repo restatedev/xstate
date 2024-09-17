@@ -11,3 +11,5 @@ packages/*/node_modules/*
 packages/*/dist/*
 packages/*/src/generated/*
 packages/*/buf.lock
+
+restate-data
