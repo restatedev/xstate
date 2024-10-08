@@ -116,7 +116,7 @@ async function createSystem<T extends ActorSystemInfo>(
       };
 
       ctx.console.log(
-        "schedule from",
+        "Scheduling event from",
         source.id,
         "to",
         target.id,
@@ -138,7 +138,7 @@ async function createSystem<T extends ActorSystemInfo>(
       const scheduledEventId = createScheduledEventId(source, id);
       if (scheduledEventId in events) {
         ctx.console.log(
-          "Ignoring duplicated schedule from",
+          "Ignoring duplicate schedule from",
           source.id,
           "to",
           target.id
@@ -154,15 +154,24 @@ async function createSystem<T extends ActorSystemInfo>(
       ctx.set("events", events);
     },
     cancel(source: AnyActorRef, id: string): void {
-      ctx.console.log("cancel schedule from", source.id, "with id", id);
-
       const scheduledEventId = createScheduledEventId(source, id);
+
+      if (!(scheduledEventId in events)) return;
+
+      ctx.console.log(
+        "Cancelling scheduled event from",
+        source.id,
+        "with id",
+        id
+      );
 
       delete events[scheduledEventId];
       ctx.set("events", events);
     },
     cancelAll(actorRef: AnyActorRef): void {
-      ctx.console.log("cancel all for", actorRef.id);
+      if (Object.keys(events).length == 0) return;
+
+      ctx.console.log("Cancel all events for", actorRef.id);
 
       for (const scheduledEventId in events) {
         const scheduledEvent = events[scheduledEventId];
@@ -190,7 +199,6 @@ async function createSystem<T extends ActorSystemInfo>(
         childrenByID[actorRef.id] = serialiseActorRef(actorRef);
         ctx.set("children", childrenByID);
       }
-      ctx.console.log("register", sessionId, actorRef.id);
       children.set(sessionId, actorRef);
       return sessionId;
     },
@@ -213,7 +221,7 @@ async function createSystem<T extends ActorSystemInfo>(
     _sendInspectionEvent: (event) => {
       const resolvedInspectionEvent: InspectionEvent = {
         ...event,
-        rootId: "root",
+        rootId: ctx.key,
       };
       observers.forEach((observer) => {
         if (typeof observer == "function") {
@@ -342,7 +350,7 @@ async function createActor<TLogic extends AnyStateMachine>(
   }
 
   const actor = createXActor(logic, {
-    id: "root",
+    id: ctx.key,
     ...options,
     parent,
     snapshot,
@@ -372,7 +380,10 @@ const actorObject = <TLogic extends AnyStateMachine>(
 
         const root = (
           await createActor(ctx, api, systemName, logic, {
-            input: request?.input,
+            input: {
+              ctx,
+              ...(request?.input ?? {}),
+            } as InputFrom<TLogic>,
           })
         ).start();
 
