@@ -10,7 +10,7 @@
  */
 
 import * as restate from "@restatedev/restate-sdk";
-import { bindXStateRouter, fromPromise } from "@restatedev/xstate";
+import { xstate, fromPromise } from "@restatedev/xstate";
 import { createMachine, sendTo } from "xstate";
 
 const authServerMachine = createMachine(
@@ -77,4 +77,4 @@ const authClientMachine = createMachine({
   },
 });
 
-await bindXStateRouter(restate.endpoint(), "auth", authClientMachine).listen();
+await restate.endpoint().bind(xstate("auth", authClientMachine)).listen();

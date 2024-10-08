@@ -1,6 +1,6 @@
 import { log, setup } from "xstate";
 import * as restate from "@restatedev/restate-sdk";
-import { fromPromise, bindXStateRouter } from "@restatedev/xstate";
+import { fromPromise, xstate } from "@restatedev/xstate";
 
 export const machine = setup({
   types: {
@@ -130,4 +130,4 @@ export const machine = setup({
   },
 });
 
-await bindXStateRouter(restate.endpoint(), "payment", machine).listen();
+await restate.endpoint().bind(xstate("payment", machine)).listen();

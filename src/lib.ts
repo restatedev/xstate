@@ -581,12 +581,11 @@ const actorObject = <TLogic extends AnyStateMachine>(
   });
 };
 
-export const bindXStateRouter = <TLogic extends AnyStateMachine>(
-  server: restate.RestateEndpoint,
+export const xstate = <TLogic extends AnyStateMachine>(
   path: string,
   logic: TLogic
-): restate.RestateEndpoint => {
-  return server.bind(actorObject(path, logic));
+) => {
+  return actorObject(path, logic);
 };
 
 export const xStateApi = <TLogic extends AnyStateMachine>(

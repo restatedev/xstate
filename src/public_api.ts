@@ -1,2 +1,2 @@
-export { bindXStateRouter } from "./lib.js";
+export { xstate } from "./lib.js";
 export { fromPromise } from "./promise.js";
