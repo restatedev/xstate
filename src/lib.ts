@@ -382,6 +382,7 @@ const actorObject = <TLogic extends AnyStateMachine>(
           await createActor(ctx, api, systemName, logic, {
             input: {
               ctx,
+              key: ctx.key,
               ...(request?.input ?? {}),
             } as InputFrom<TLogic>,
           })

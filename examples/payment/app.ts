@@ -11,7 +11,7 @@ export const machine = setup({
       amount: number;
     },
     input: {} as {
-      ctx: restate.ObjectContext;
+      key: string; // the key the state machine was created against
       senderUserID: string;
       recipientUserID: string;
       amount: number;
@@ -26,16 +26,8 @@ export const machine = setup({
   },
   actors: {
     updateBalance: fromPromise(
-      async ({
-        input,
-        ctx,
-      }: {
-        input: { userID: string; amount: number };
-        ctx: restate.ObjectSharedContext;
-      }) => {
-        ctx.console.log(
-          `Adding ${input.amount} to the balance of ${input.userID}`
-        );
+      async ({ input }: { input: { userID: string; amount: number } }) => {
+        console.log(`Adding ${input.amount} to the balance of ${input.userID}`);
         const res = await fetch("https://httpbin.org/get");
         return res.json();
       }
@@ -46,7 +38,7 @@ export const machine = setup({
     senderUserID: input.senderUserID,
     recipientUserID: input.recipientUserID,
     amount: input.amount,
-    paymentID: input.ctx.key,
+    paymentID: input.key,
   }),
   id: "Payment",
   initial: "Awaiting approval",
