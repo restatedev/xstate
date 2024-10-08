@@ -26,7 +26,7 @@ To try out this example:
 # start a local Restate instance
 restate-server
 # start the service
-npm run example
+npm run auth-example
 # register the state machine service against restate
 restate dep register http://localhost:9080
 
