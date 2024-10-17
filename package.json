@@ -1,6 +1,6 @@
 {
   "name": "@restatedev/xstate",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Run XState state machines on Restate",
   "license": "MIT",
   "author": "Restate developers",
@@ -68,6 +68,8 @@
     "github": {
       "release": true
     },
-    "npm": false
+    "npm": {
+      "publish": "false"
+    }
   }
 }
