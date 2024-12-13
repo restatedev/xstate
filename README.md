@@ -15,7 +15,7 @@ avoid blocking the event loop.
 The service is set up and managed automatically by interpreting the state
 machine definition, and can be deployed as a Lambda or as a long-lived service.
 
-In [`example/app.ts`](./example/app.ts) you will see an example of an XState machine
+In [`examples/auth/app.ts`](./examples/auth/app.ts) you will see an example of an XState machine
 that uses cross-machine communication, delays, and Promise actors, all running in Restate.
 Most XState machines should work out of the box, but this is still experimental, so
 we haven't tested everything yet!
