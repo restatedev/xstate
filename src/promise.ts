@@ -108,6 +108,7 @@ export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
         self: serialiseActorRef(self),
         srcs: actorSrc(self),
         input: state.input,
+        version: rs.version,
       });
 
       // note that we sent off the promise so we don't do it again
