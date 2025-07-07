@@ -10,7 +10,7 @@
  */
 
 import * as restate from "@restatedev/restate-sdk";
-import { xstateVersioned } from "@restatedev/xstate";
+import { xstate } from "@restatedev/xstate";
 import { assign, createMachine } from "xstate";
 
 const counterv1 = createMachine({
@@ -55,9 +55,11 @@ const counterv2 = createMachine({
 await restate
   .endpoint()
   .bind(
-    xstateVersioned("counter", {
-      latest: { name: "counterv2", machine: counterv2 },
-      previous: { counterv1 },
+    xstate("counter", counterv2, {
+      versions: {
+        latest: "counterv2",
+        previous: { counterv1 },
+      },
     })
   )
   .listen();

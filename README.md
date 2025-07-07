@@ -46,9 +46,9 @@ to be compatible with the state of machines that exist in Restate.
 
 Generally, XState makes it fairly easy to make backwards compatible state updates; ensure that states are not removed, and any new context values that you rely on are typed as optional.
 However, occasionally a significant workflow refactor is needed and its impossible to keep the definition compatible with the state of the existing machines.
-In this situation you can use the `xstateVersioned` API. This allows you to have multiple state machine definitions, with one considered the 'latest. New state machines - ie, those created deliberately with `create`
+In this situation you can use the `versions` field of the options argument to the `xstate` function. This allows you to have multiple state machine definitions, with one considered the 'latest. New state machines - ie, those created deliberately with `create`
 or implicitly when `send` operates on a machine with no state saved, will always use the latest code version. However, in-flight machines will use the state of the version they started on.
-When migrating from the `xstate` to the `xstateVersioned` API (ie, doing your first migration), you should label the original state machine definition as `initial` as this is what the library defaults to when using the unversioned API.
+When using the `versions` field for the first time (ie, doing your first migration), you should label the original state machine definition as `initial` as this is what the library defaults to when `versions` is not provided.
 
 In [`examples/versioning/app.ts`](./examples/versioning/app.ts) there is an example of a machine that is versioned in this way. To try out this example:
 
@@ -65,7 +65,7 @@ curl http://localhost:8080/counter/myMachine/create
 # increment it a few times
 curl http://localhost:8080/counter/myMachine/send --json '{"event": {"type": "increment"}}'
 
-# now update the code to swap round counterv1 and counterv2 in the version list - the service will reload automatically
+# now update the code to swap round the way counterv1 and counterv2 are given to the `xstate` function - the service will reload automatically
 # the existing machine will keep using the v2 code:
 curl http://localhost:8080/counter/myMachine/send --json '{"event": {"type": "increment"}}'
 # but a new machine will now use the v1 code:

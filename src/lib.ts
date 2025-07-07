@@ -363,21 +363,6 @@ async function createActor<TLogic extends AnyStateMachine>(
   return actor as ActorEventSender<TLogic>;
 }
 
-type VersionMap<
-  LatestVersion extends string,
-  LatestStateMachine extends AnyStateMachine,
-  PreviousVersion extends string,
-  PreviousStateMachine extends AnyStateMachine
-> = {
-  latest: {
-    name: LatestVersion;
-    machine: LatestStateMachine;
-  };
-  previous: {
-    [v in PreviousVersion]: PreviousStateMachine;
-  };
-};
-
 const actorObject = <
   P extends string,
   LatestVersion extends string,
@@ -386,14 +371,17 @@ const actorObject = <
   PreviousStateMachine extends AnyStateMachine
 >(
   path: P,
-  versionedLogic: VersionMap<
-    LatestVersion,
-    LatestStateMachine,
-    PreviousVersion,
-    PreviousStateMachine
-  >
+  latestLogic: LatestStateMachine,
+  options?: XStateOptions<LatestVersion, PreviousVersion, PreviousStateMachine>
 ) => {
   const api: XStateApi<string, LatestStateMachine> = { name: path };
+
+  const versionOptions =
+    options?.versions ??
+    ({
+      latest: "initial",
+      previous: {},
+    } as VersionOptions<LatestVersion, PreviousVersion, PreviousStateMachine>);
 
   return restate.object({
     name: path,
@@ -411,9 +399,16 @@ const actorObject = <
         ctx.clear("events");
         ctx.clear("children");
 
-        const version = await getOrSetVersion(ctx, versionedLogic.latest.name);
-        isValidVersion(versionedLogic, version);
-        const logic = getLogic(versionedLogic, version) as LatestStateMachine;
+        const version = await getOrSetVersion(
+          ctx,
+          options?.versions?.latest ?? "initial"
+        );
+        isValidVersion(versionOptions, version);
+        const logic = getLogic(
+          latestLogic,
+          versionOptions,
+          version
+        ) as LatestStateMachine;
 
         const root = (
           await createActor(ctx, api, systemName, version, logic, {
@@ -444,9 +439,9 @@ const actorObject = <
           throw new TerminalError("Must provide a request");
         }
 
-        const version = await getOrSetVersion(ctx, versionedLogic.latest.name);
-        isValidVersion(versionedLogic, version);
-        const logic = getLogic(versionedLogic, version);
+        const version = await getOrSetVersion(ctx, versionOptions.latest);
+        isValidVersion(versionOptions, version);
+        const logic = getLogic(latestLogic, versionOptions, version);
 
         if (request.scheduledEvent) {
           const events = (await ctx.get("events")) ?? {};
@@ -519,10 +514,10 @@ const actorObject = <
         // no need to set the version here if we are just getting a snapshot
         let version = await ctx.get("version");
         if (version == null) {
-          version = versionedLogic.latest.name as string;
+          version = versionOptions.latest as string;
         }
-        isValidVersion(versionedLogic, version);
-        const logic = getLogic(versionedLogic, version);
+        isValidVersion(versionOptions, version);
+        const logic = getLogic(latestLogic, versionOptions, version);
 
         const root = await createActor<
           LatestStateMachine | PreviousStateMachine
@@ -550,10 +545,10 @@ const actorObject = <
           if (version == undefined) {
             // most likely this invocation was created before updating to a version of the library that would provide a version
             // in this case we default to latest
-            version = versionedLogic.latest.name as string;
+            version = versionOptions.latest as string;
           }
-          isValidVersion(versionedLogic, version);
-          const logic = getLogic(versionedLogic, version);
+          isValidVersion(versionOptions, version);
+          const logic = getLogic(latestLogic, versionOptions, version);
 
           ctx.console.log(
             "run promise with srcs",
@@ -672,20 +667,18 @@ async function getOrSetVersion<
 
 function isValidVersion<
   LatestVersion extends string,
-  LatestStateMachine extends AnyStateMachine,
   PreviousVersion extends string,
   PreviousStateMachine extends AnyStateMachine
 >(
-  versionedLogic: VersionMap<
+  versionOptions: VersionOptions<
     LatestVersion,
-    LatestStateMachine,
     PreviousVersion,
     PreviousStateMachine
   >,
   version: LatestVersion | PreviousVersion | string
 ): asserts version is LatestVersion | PreviousVersion {
-  if (version === versionedLogic.latest.name) return;
-  if (version in versionedLogic.previous) return;
+  if (version === versionOptions.latest) return;
+  if (version in versionOptions.previous) return;
   throw new restate.TerminalError(
     `The state refers to a version ${version} which is not present in the code`
   );
@@ -697,45 +690,53 @@ function getLogic<
   PreviousVersion extends string,
   PreviousStateMachine extends AnyStateMachine
 >(
-  versionedLogic: VersionMap<
+  latestLogic: LatestStateMachine,
+  versionOptions: VersionOptions<
     LatestVersion,
-    LatestStateMachine,
     PreviousVersion,
     PreviousStateMachine
   >,
   version: LatestVersion | PreviousVersion
 ): LatestStateMachine | PreviousStateMachine {
-  if (versionedLogic.latest.name === version)
-    return versionedLogic.latest.machine;
-  return versionedLogic.previous[version as PreviousVersion];
+  if (versionOptions.latest === version) return latestLogic;
+  return versionOptions.previous[version as PreviousVersion];
 }
 
-export const xstate = <P extends string, TLogic extends AnyStateMachine>(
-  path: P,
-  logic: TLogic
-): XStateApi<P, TLogic> => {
-  return xstateVersioned(path, {
-    latest: { name: "initial", machine: logic },
-    previous: {},
-  });
-};
+export interface XStateOptions<
+  LatestVersion extends string,
+  PreviousVersion extends string,
+  PreviousStateMachine extends AnyStateMachine
+> {
+  versions?: VersionOptions<
+    LatestVersion,
+    PreviousVersion,
+    PreviousStateMachine
+  >;
+}
 
-export const xstateVersioned = <
+interface VersionOptions<
+  LatestVersion extends string,
+  PreviousVersion extends string,
+  PreviousStateMachine extends AnyStateMachine
+> {
+  latest: LatestVersion;
+  previous: {
+    [v in PreviousVersion]: PreviousStateMachine;
+  };
+}
+
+export const xstate = <
   P extends string,
   LatestVersion extends string,
   LatestStateMachine extends AnyStateMachine,
-  PreviousVersion extends string,
-  PreviousStateMachine extends AnyStateMachine
+  PreviousVersion extends string = never,
+  PreviousStateMachine extends AnyStateMachine = never
 >(
   path: P,
-  versionedLogic: VersionMap<
-    LatestVersion,
-    LatestStateMachine,
-    PreviousVersion,
-    PreviousStateMachine
-  >
+  logic: LatestStateMachine,
+  options?: XStateOptions<LatestVersion, PreviousVersion, PreviousStateMachine>
 ): XStateApi<P, LatestStateMachine> => {
-  return actorObject(path, versionedLogic);
+  return actorObject(path, logic, options);
 };
 
 type XStateApi<
