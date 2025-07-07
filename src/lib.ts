@@ -365,23 +365,16 @@ async function createActor<TLogic extends AnyStateMachine>(
 
 const actorObject = <
   P extends string,
-  LatestVersion extends string,
   LatestStateMachine extends AnyStateMachine,
-  PreviousVersion extends string,
   PreviousStateMachine extends AnyStateMachine
 >(
   path: P,
   latestLogic: LatestStateMachine,
-  options?: XStateOptions<LatestVersion, PreviousVersion, PreviousStateMachine>
+  options?: XStateOptions<PreviousStateMachine>
 ) => {
   const api: XStateApi<string, LatestStateMachine> = { name: path };
 
-  const versionOptions =
-    options?.versions ??
-    ({
-      latest: "initial",
-      previous: {},
-    } as VersionOptions<LatestVersion, PreviousVersion, PreviousStateMachine>);
+  const versions = options?.versions ?? [];
 
   return restate.object({
     name: path,
@@ -399,14 +392,10 @@ const actorObject = <
         ctx.clear("events");
         ctx.clear("children");
 
-        const version = await getOrSetVersion(
-          ctx,
-          options?.versions?.latest ?? "initial"
-        );
-        isValidVersion(versionOptions, version);
+        const version = await getOrSetVersion(ctx, latestLogic.id);
         const logic = getLogic(
           latestLogic,
-          versionOptions,
+          versions,
           version
         ) as LatestStateMachine;
 
@@ -439,9 +428,8 @@ const actorObject = <
           throw new TerminalError("Must provide a request");
         }
 
-        const version = await getOrSetVersion(ctx, versionOptions.latest);
-        isValidVersion(versionOptions, version);
-        const logic = getLogic(latestLogic, versionOptions, version);
+        const version = await getOrSetVersion(ctx, latestLogic.id);
+        const logic = getLogic(latestLogic, versions, version);
 
         if (request.scheduledEvent) {
           const events = (await ctx.get("events")) ?? {};
@@ -514,10 +502,9 @@ const actorObject = <
         // no need to set the version here if we are just getting a snapshot
         let version = await ctx.get("version");
         if (version == null) {
-          version = versionOptions.latest as string;
+          version = latestLogic.id;
         }
-        isValidVersion(versionOptions, version);
-        const logic = getLogic(latestLogic, versionOptions, version);
+        const logic = getLogic(latestLogic, versions, version);
 
         const root = await createActor<
           LatestStateMachine | PreviousStateMachine
@@ -545,10 +532,9 @@ const actorObject = <
           if (version == undefined) {
             // most likely this invocation was created before updating to a version of the library that would provide a version
             // in this case we default to latest
-            version = versionOptions.latest as string;
+            version = latestLogic.id;
           }
-          isValidVersion(versionOptions, version);
-          const logic = getLogic(latestLogic, versionOptions, version);
+          const logic = getLogic(latestLogic, versions, version);
 
           ctx.console.log(
             "run promise with srcs",
@@ -665,86 +651,57 @@ async function getOrSetVersion<
   return version;
 }
 
-function isValidVersion<
-  LatestVersion extends string,
-  PreviousVersion extends string,
+function getLogic<
+  LatestStateMachine extends AnyStateMachine,
   PreviousStateMachine extends AnyStateMachine
 >(
-  versionOptions: VersionOptions<
-    LatestVersion,
-    PreviousVersion,
-    PreviousStateMachine
-  >,
-  version: LatestVersion | PreviousVersion | string
-): asserts version is LatestVersion | PreviousVersion {
-  if (version === versionOptions.latest) return;
-  if (version in versionOptions.previous) return;
+  latestLogic: LatestStateMachine,
+  previousVersions: PreviousStateMachine[],
+  version: string
+): LatestStateMachine | PreviousStateMachine {
+  if (latestLogic.id === version) return latestLogic;
+  const i = previousVersions.findIndex((v) => v.id === version);
+  if (i !== -1) return previousVersions[i];
   throw new restate.TerminalError(
     `The state refers to a version ${version} which is not present in the code`
   );
 }
 
-function getLogic<
-  LatestVersion extends string,
-  LatestStateMachine extends AnyStateMachine,
-  PreviousVersion extends string,
-  PreviousStateMachine extends AnyStateMachine
->(
-  latestLogic: LatestStateMachine,
-  versionOptions: VersionOptions<
-    LatestVersion,
-    PreviousVersion,
-    PreviousStateMachine
-  >,
-  version: LatestVersion | PreviousVersion
-): LatestStateMachine | PreviousStateMachine {
-  if (versionOptions.latest === version) return latestLogic;
-  return versionOptions.previous[version as PreviousVersion];
-}
-
-export interface XStateOptions<
-  LatestVersion extends string,
-  PreviousVersion extends string,
-  PreviousStateMachine extends AnyStateMachine
-> {
-  versions?: VersionOptions<
-    LatestVersion,
-    PreviousVersion,
-    PreviousStateMachine
-  >;
-}
-
-interface VersionOptions<
-  LatestVersion extends string,
-  PreviousVersion extends string,
-  PreviousStateMachine extends AnyStateMachine
-> {
-  latest: LatestVersion;
-  previous: {
-    [v in PreviousVersion]: PreviousStateMachine;
-  };
+export interface XStateOptions<PreviousStateMachine extends AnyStateMachine> {
+  versions?: PreviousStateMachine[];
 }
 
 export const xstate = <
   P extends string,
-  LatestVersion extends string,
   LatestStateMachine extends AnyStateMachine,
-  PreviousVersion extends string = never,
   PreviousStateMachine extends AnyStateMachine = never
 >(
   path: P,
   logic: LatestStateMachine,
-  options?: XStateOptions<LatestVersion, PreviousVersion, PreviousStateMachine>
+  options?: XStateOptions<PreviousStateMachine>
 ): XStateApi<P, LatestStateMachine> => {
+  if (options?.versions) {
+    const idsSet = new Set<string>();
+    for (const version of options.versions) {
+      if (version.id == logic.id)
+        throw new Error(
+          `State machine ID ${version.id} is used in both the latest and a previous version; IDs must be unique across versions`
+        );
+      if (idsSet.has(version.id))
+        throw new Error(
+          `State machine ID ${version.id} is used in two previous versions; IDs must be unique across versions`
+        );
+      idsSet.add(version.id);
+    }
+  }
+
   return actorObject(path, logic, options);
 };
 
 type XStateApi<
   P extends string,
   LatestStateMachine extends AnyStateMachine
-> = ReturnType<
-  typeof actorObject<P, string, LatestStateMachine, string, AnyStateMachine>
->;
+> = ReturnType<typeof actorObject<P, LatestStateMachine, AnyStateMachine>>;
 
 function createScheduledEventId(
   actorRef: SerialisableActorRef,

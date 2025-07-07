@@ -14,6 +14,7 @@ import { xstate } from "@restatedev/xstate";
 import { assign, createMachine } from "xstate";
 
 const counterv1 = createMachine({
+  // the state machine id uniquely identifies the version
   id: "counterv1",
   context: {
     count: 0,
@@ -34,6 +35,7 @@ const counterv1 = createMachine({
 
 // v2 is incompatible with the state of v1 counters so a new version is used to allow it to be used only for new machines
 const counterv2 = createMachine({
+  // by incrementing the id we make this a separate version
   id: "counterv2",
   context: {
     total: 0,
@@ -56,10 +58,7 @@ await restate
   .endpoint()
   .bind(
     xstate("counter", counterv2, {
-      versions: {
-        latest: "counterv2",
-        previous: { counterv1 },
-      },
+      versions: [counterv1],
     })
   )
   .listen();
