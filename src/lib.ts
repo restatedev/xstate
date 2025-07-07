@@ -1,6 +1,5 @@
 import type {
   Actor,
-  ActorLogicFrom,
   ActorOptions,
   ActorSystem,
   ActorSystemInfo,
@@ -43,9 +42,10 @@ export interface RestateActorSystem<T extends ActorSystemInfo>
     target: ActorRefEventSender,
     event: AnyEventObject
   ) => void;
-  api: XStateApi<ActorLogicFrom<T>>;
+  api: XStateApi<string, AnyStateMachine>;
   ctx: restate.ObjectContext<State>;
   systemName: string;
+  version: string;
 }
 
 type SerialisableActorRef = {
@@ -78,6 +78,7 @@ type SerialisableScheduledEvent = {
 };
 
 type State = {
+  version: string;
   events: { [key: string]: SerialisableScheduledEvent };
   children: { [key: string]: SerialisableActorRef };
   snapshot: Snapshot<unknown>;
@@ -85,8 +86,9 @@ type State = {
 
 async function createSystem<T extends ActorSystemInfo>(
   ctx: restate.ObjectContext<State>,
-  api: XStateApi<ActorLogicFrom<T>>,
-  systemName: string
+  api: XStateApi<string, AnyStateMachine>,
+  systemName: string,
+  version: string
 ): Promise<RestateActorSystem<T>> {
   const events = (await ctx.get("events")) ?? {};
   const childrenByID = (await ctx.get("children")) ?? {};
@@ -187,6 +189,7 @@ async function createSystem<T extends ActorSystemInfo>(
     ctx,
     api,
     systemName,
+    version,
 
     _bookId: () => ctx.rand.uuidv4(),
     _register: (sessionId, actorRef) => {
@@ -298,12 +301,13 @@ export interface ActorRefEventSender extends AnyActorRef {
 
 async function createActor<TLogic extends AnyStateMachine>(
   ctx: restate.ObjectContext<State>,
-  api: XStateApi<TLogic>,
+  api: XStateApi<string, TLogic>,
   systemName: string,
+  version: string,
   logic: TLogic,
   options?: ActorOptions<TLogic>
 ): Promise<ActorEventSender<TLogic>> {
-  const system = await createSystem(ctx, api, systemName);
+  const system = await createSystem(ctx, api, systemName, version);
   const snapshot = (await ctx.get("snapshot")) ?? undefined;
 
   const parent: ActorRefEventSender = {
@@ -359,32 +363,49 @@ async function createActor<TLogic extends AnyStateMachine>(
   return actor as ActorEventSender<TLogic>;
 }
 
-const actorObject = <TLogic extends AnyStateMachine>(
-  path: string,
-  logic: TLogic
+const actorObject = <
+  P extends string,
+  LatestStateMachine extends AnyStateMachine,
+  PreviousStateMachine extends AnyStateMachine
+>(
+  path: P,
+  latestLogic: LatestStateMachine,
+  options?: XStateOptions<PreviousStateMachine>
 ) => {
-  const api = xStateApi(path);
+  const api: XStateApi<string, LatestStateMachine> = { name: path };
+
+  const versions = options?.versions ?? [];
 
   return restate.object({
     name: path,
     handlers: {
       create: async (
         ctx: restate.ObjectContext<State>,
-        request?: { input?: InputFrom<TLogic> }
+        request?: {
+          input?: InputFrom<LatestStateMachine>;
+        }
       ): Promise<Snapshot<unknown>> => {
         const systemName = ctx.key;
 
+        ctx.clear("version");
         ctx.clear("snapshot");
         ctx.clear("events");
         ctx.clear("children");
 
+        const version = await getOrSetVersion(ctx, latestLogic.id);
+        const logic = getLogic(
+          latestLogic,
+          versions,
+          version
+        ) as LatestStateMachine;
+
         const root = (
-          await createActor(ctx, api, systemName, logic, {
+          await createActor(ctx, api, systemName, version, logic, {
             input: {
               ctx,
               key: ctx.key,
               ...(request?.input ?? {}),
-            } as InputFrom<TLogic>,
+            } as InputFrom<LatestStateMachine>,
           })
         ).start();
 
@@ -406,6 +427,9 @@ const actorObject = <TLogic extends AnyStateMachine>(
         if (!request) {
           throw new TerminalError("Must provide a request");
         }
+
+        const version = await getOrSetVersion(ctx, latestLogic.id);
+        const logic = getLogic(latestLogic, versions, version);
 
         if (request.scheduledEvent) {
           const events = (await ctx.get("events")) ?? {};
@@ -435,7 +459,15 @@ const actorObject = <TLogic extends AnyStateMachine>(
           ctx.set("events", events);
         }
 
-        const root = (await createActor(ctx, api, systemName, logic)).start();
+        const root = (
+          await createActor<PreviousStateMachine | LatestStateMachine>(
+            ctx,
+            api,
+            systemName,
+            version,
+            logic
+          )
+        ).start();
 
         let actor;
         if (request.target) {
@@ -463,35 +495,54 @@ const actorObject = <TLogic extends AnyStateMachine>(
         return nextSnapshot;
       },
       snapshot: async (
-        ctx: restate.ObjectContext<State>,
-        systemName: string
+        ctx: restate.ObjectContext<State>
       ): Promise<Snapshot<unknown>> => {
-        const root = await createActor(ctx, api, systemName, logic);
+        const systemName = ctx.key;
+
+        // no need to set the version here if we are just getting a snapshot
+        let version = await ctx.get("version");
+        if (version == null) {
+          version = latestLogic.id;
+        }
+        const logic = getLogic(latestLogic, versions, version);
+
+        const root = await createActor<
+          LatestStateMachine | PreviousStateMachine
+        >(ctx, api, systemName, version, logic);
 
         return root.getPersistedSnapshot();
       },
       invokePromise: restate.handlers.object.shared(
         async (
-          ctx: restate.ObjectSharedContext,
+          ctx: restate.ObjectSharedContext<State>,
           {
             self,
             srcs,
             input,
+            version,
           }: {
             self: SerialisableActorRef;
             srcs: string[];
             input: unknown;
+            version?: string;
           }
         ) => {
           const systemName = ctx.key;
 
+          if (version == undefined) {
+            // most likely this invocation was created before updating to a version of the library that would provide a version
+            // in this case we default to latest
+            version = latestLogic.id;
+          }
+          const logic = getLogic(latestLogic, versions, version);
+
           ctx.console.log(
             "run promise with srcs",
             srcs,
+            "at version",
+            version,
             "in system",
-            systemName,
-            "with input",
-            input
+            systemName
           );
 
           const [promiseSrc, ...machineSrcs] = srcs;
@@ -550,7 +601,7 @@ const actorObject = <TLogic extends AnyStateMachine>(
           const resolvedPromise = Promise.resolve(
             (promiseActor.config as PromiseCreator<unknown, unknown>)({
               input,
-              ctx,
+              ctx: ctx as unknown as restate.ObjectSharedContext,
             })
           );
 
@@ -582,22 +633,75 @@ const actorObject = <TLogic extends AnyStateMachine>(
   });
 };
 
-export const xstate = <TLogic extends AnyStateMachine>(
-  path: string,
-  logic: TLogic
-) => {
-  return actorObject(path, logic);
+async function getOrSetVersion<
+  LatestVersion extends string,
+  PreviousVersion extends string
+>(
+  ctx: restate.ObjectContext<State>,
+  latestVersion: LatestVersion
+): Promise<LatestVersion | PreviousVersion> {
+  let version = (await ctx.get("version")) as
+    | LatestVersion
+    | PreviousVersion
+    | null;
+  if (version == null) {
+    version = latestVersion;
+    ctx.set("version", version);
+  }
+  return version;
+}
+
+function getLogic<
+  LatestStateMachine extends AnyStateMachine,
+  PreviousStateMachine extends AnyStateMachine
+>(
+  latestLogic: LatestStateMachine,
+  previousVersions: PreviousStateMachine[],
+  version: string
+): LatestStateMachine | PreviousStateMachine {
+  if (latestLogic.id === version) return latestLogic;
+  const i = previousVersions.findIndex((v) => v.id === version);
+  if (i !== -1) return previousVersions[i];
+  throw new restate.TerminalError(
+    `The state refers to a version ${version} which is not present in the code`
+  );
+}
+
+export interface XStateOptions<PreviousStateMachine extends AnyStateMachine> {
+  versions?: PreviousStateMachine[];
+}
+
+export const xstate = <
+  P extends string,
+  LatestStateMachine extends AnyStateMachine,
+  PreviousStateMachine extends AnyStateMachine = never
+>(
+  path: P,
+  logic: LatestStateMachine,
+  options?: XStateOptions<PreviousStateMachine>
+): XStateApi<P, LatestStateMachine> => {
+  if (options?.versions) {
+    const idsSet = new Set<string>();
+    for (const version of options.versions) {
+      if (version.id == logic.id)
+        throw new Error(
+          `State machine ID ${version.id} is used in both the latest and a previous version; IDs must be unique across versions`
+        );
+      if (idsSet.has(version.id))
+        throw new Error(
+          `State machine ID ${version.id} is used in two previous versions; IDs must be unique across versions`
+        );
+      idsSet.add(version.id);
+    }
+  }
+
+  return actorObject(path, logic, options);
 };
 
-export const xStateApi = <TLogic extends AnyStateMachine>(
-  path: string
-): XStateApi<TLogic> => {
-  return { name: path };
-};
-
-type XStateApi<TLogic extends AnyStateMachine> = ReturnType<
-  typeof actorObject<TLogic>
->;
+type XStateApi<
+  P extends string,
+  LatestStateMachine extends AnyStateMachine
+> = ReturnType<typeof actorObject<P, LatestStateMachine, AnyStateMachine>>;
 
 function createScheduledEventId(
   actorRef: SerialisableActorRef,
