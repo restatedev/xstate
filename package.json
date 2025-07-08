@@ -29,7 +29,7 @@
     "build": "npm run build:cjs && npm run build:esm",
     "build:cjs": "tsc --module commonjs --verbatimModuleSyntax false --moduleResolution node10 --outDir ./dist/cjs --declaration --declarationDir ./dist/cjs && echo >./dist/cjs/package.json '{\"type\":\"commonjs\"}'",
     "build:esm": "tsc --outDir ./dist/esm --declaration --declarationDir ./dist/esm",
-    "test": "vitest run --silent --passWithNoTests",
+    "test": "vitest run --passWithNoTests",
     "lint": "eslint --ignore-path .eslintignore --max-warnings=0 --ext .ts .",
     "format": "prettier --ignore-path .eslintignore --write \"**/*.+(js|ts|json)\"",
     "format-check": "prettier --ignore-path .eslintignore --check \"**/*.+(js|ts|json)\"",
@@ -57,7 +57,8 @@
     "release-it": "^19.0.3",
     "tsx": "^4.19.0",
     "typescript": "^5.4.5",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@restatedev/restate-sdk-testcontainers": "^1.7.0"
   },
   "publishConfig": {
     "@restatedev:registry": "https://registry.npmjs.org"
