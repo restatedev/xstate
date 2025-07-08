@@ -1,6 +1,6 @@
 {
   "name": "@restatedev/xstate",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Run XState state machines on Restate",
   "license": "MIT",
   "author": "Restate developers",
@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.15.3",
-    "@types/node": "^20.10.4",
+    "@types/node": "^20.19.0",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
     "@typescript-eslint/parser": "^7.13.0",
     "eslint": "^8.57.0",
