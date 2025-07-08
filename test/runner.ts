@@ -25,12 +25,6 @@ export type MachineApi = {
   snapshot: (context: unknown) => Promise<unknown>;
 };
 
-export type AsyncEventGenerator<SnapshotType> = AsyncGenerator<
-  AnyEventObject,
-  void,
-  SnapshotType
->;
-
 export type RunMachineOptions = {
   machine: VirtualObjectDefinition<string, MachineApi>;
   key?: string;
@@ -42,41 +36,6 @@ export type RunningMachine<SnapshotType> = {
   snapshot(): Promise<SnapshotType>;
   [Symbol.dispose](): void;
 };
-
-export class RunningMachineImpl<SnapshotType>
-  implements RunningMachine<SnapshotType>
-{
-  constructor(
-    private readonly opts: RunMachineOptions,
-    private env: RestateTestEnvironment,
-  ) {}
-
-  async send(event: AnyEventObject): Promise<SnapshotType> {
-    const rs = clients.connect({ url: this.env.baseUrl() });
-    const client = rs.objectClient(
-      this.opts.machine,
-      this.opts.key ?? "default",
-    );
-    return (await client.send({ event })) as SnapshotType;
-  }
-
-  async snapshot(): Promise<SnapshotType> {
-    const rs = clients.connect({ url: this.env.baseUrl() });
-    const client = rs.objectClient(
-      this.opts.machine,
-      this.opts.key ?? "default",
-    );
-    return (await client.snapshot()) as SnapshotType;
-  }
-
-  [Symbol.dispose](): void {
-    if (this.env !== undefined) {
-      this.env.stop().catch((err) => {
-        console.error("Error stopping environment:", err);
-      });
-    }
-  }
-}
 
 export async function runMachine<SnapshotType>(
   opts: RunMachineOptions,
@@ -97,7 +56,21 @@ export async function runMachine<SnapshotType>(
     const rs = clients.connect({ url: env.baseUrl() });
     const client = rs.objectClient(opts.machine, opts.key ?? "default");
     await client.create({ input: opts.input ?? {} });
-    return new RunningMachineImpl(opts, env);
+    return {
+      send: async (event: AnyEventObject) => {
+        return (await client.send({ event })) as SnapshotType;
+      },
+
+      snapshot: async () => {
+        return (await client.snapshot()) as SnapshotType;
+      },
+
+      [Symbol.dispose]: () => {
+        env.stop().catch((err) => {
+          console.error("Error stopping environment:", err);
+        });
+      },
+    };
   } catch (error) {
     if (env !== undefined) {
       await env.stop();
