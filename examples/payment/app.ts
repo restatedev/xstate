@@ -20,7 +20,7 @@ export const machine = setup({
   },
   actions: {
     requestApproval: log(
-      ({ context }) => `Requesting approval for ${context.paymentID}`
+      ({ context }) => `Requesting approval for ${context.paymentID}`,
     ),
     sendEmail: log(({ context }) => `Sending email to ${context.senderUserID}`),
   },
@@ -30,7 +30,7 @@ export const machine = setup({
         console.log(`Adding ${input.amount} to the balance of ${input.userID}`);
         const res = await fetch("https://httpbin.org/get");
         return res.json();
-      }
+      },
     ),
   },
 }).createMachine({

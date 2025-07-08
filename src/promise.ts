@@ -50,7 +50,7 @@ export type PromiseActorRef<TOutput> = ActorRefFrom<
 >;
 
 export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
-  promiseCreator: PromiseCreator<TOutput, TInput>
+  promiseCreator: PromiseCreator<TOutput, TInput>,
 ): PromiseActorLogic<TOutput, TInput> {
   const logic: PromiseActorLogic<TOutput, TInput> = {
     sentinel: "restate.promise.actor",
@@ -145,7 +145,7 @@ function actorSrc(actor?: AnyActorRef): string[] {
 
 export function resolveReferencedActor(
   machine: AnyStateMachine,
-  src: string
+  src: string,
 ): AnyActorLogic | undefined {
   const match = src.match(/^xstate\.invoke\.(\d+)\.(.*)/)!;
   if (!match) {

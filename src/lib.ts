@@ -33,14 +33,14 @@ export interface RestateActorSystem<T extends ActorSystemInfo>
   _register: (sessionId: string, actorRef: ActorRefEventSender) => string;
   _unregister: (actorRef: AnyActorRef) => void;
   _sendInspectionEvent: (
-    event: HomomorphicOmit<InspectionEvent, "rootId">
+    event: HomomorphicOmit<InspectionEvent, "rootId">,
   ) => void;
   actor: (sessionId: string) => ActorRefEventSender | undefined;
   _set: <K extends keyof T["actors"]>(key: K, actorRef: T["actors"][K]) => void;
   _relay: (
     source: AnyActorRef | SerialisableActorRef | undefined,
     target: ActorRefEventSender,
-    event: AnyEventObject
+    event: AnyEventObject,
   ) => void;
   api: XStateApi<string, AnyStateMachine>;
   ctx: restate.ObjectContext<State>;
@@ -55,7 +55,7 @@ type SerialisableActorRef = {
 };
 
 export const serialiseActorRef = (
-  actorRef: AnyActorRef
+  actorRef: AnyActorRef,
 ): SerialisableActorRef => {
   return {
     id: actorRef.id,
@@ -88,7 +88,7 @@ async function createSystem<T extends ActorSystemInfo>(
   ctx: restate.ObjectContext<State>,
   api: XStateApi<string, AnyStateMachine>,
   systemName: string,
-  version: string
+  version: string,
 ): Promise<RestateActorSystem<T>> {
   const events = (await ctx.get("events")) ?? {};
   const childrenByID = (await ctx.get("children")) ?? {};
@@ -106,7 +106,7 @@ async function createSystem<T extends ActorSystemInfo>(
       _target: AnyActorRef,
       event: EventObject,
       delay: number,
-      id: string | undefined
+      id: string | undefined,
     ): void {
       if (id === undefined) {
         id = ctx.rand.random().toString(36).slice(2);
@@ -125,7 +125,7 @@ async function createSystem<T extends ActorSystemInfo>(
         "with id",
         id,
         "and delay",
-        delay
+        delay,
       );
 
       const scheduledEvent: SerialisableScheduledEvent = {
@@ -143,7 +143,7 @@ async function createSystem<T extends ActorSystemInfo>(
           "Ignoring duplicate schedule from",
           source.id,
           "to",
-          target.id
+          target.id,
         );
         return;
       }
@@ -164,7 +164,7 @@ async function createSystem<T extends ActorSystemInfo>(
         "Cancelling scheduled event from",
         source.id,
         "with id",
-        id
+        id,
       );
 
       delete events[scheduledEventId];
@@ -244,7 +244,7 @@ async function createSystem<T extends ActorSystemInfo>(
       const existing = keyedActors.get(systemId);
       if (existing && existing !== actorRef) {
         throw new Error(
-          `Actor with system ID '${systemId as string}' already exists.`
+          `Actor with system ID '${systemId as string}' already exists.`,
         );
       }
 
@@ -266,7 +266,7 @@ async function createSystem<T extends ActorSystemInfo>(
         "to",
         target.id,
         ":",
-        event.type
+        event.type,
       );
       target._send(event);
     },
@@ -305,7 +305,7 @@ async function createActor<TLogic extends AnyStateMachine>(
   systemName: string,
   version: string,
   logic: TLogic,
-  options?: ActorOptions<TLogic>
+  options?: ActorOptions<TLogic>,
 ): Promise<ActorEventSender<TLogic>> {
   const system = await createSystem(ctx, api, systemName, version);
   const snapshot = (await ctx.get("snapshot")) ?? undefined;
@@ -366,11 +366,11 @@ async function createActor<TLogic extends AnyStateMachine>(
 const actorObject = <
   P extends string,
   LatestStateMachine extends AnyStateMachine,
-  PreviousStateMachine extends AnyStateMachine
+  PreviousStateMachine extends AnyStateMachine,
 >(
   path: P,
   latestLogic: LatestStateMachine,
-  options?: XStateOptions<PreviousStateMachine>
+  options?: XStateOptions<PreviousStateMachine>,
 ) => {
   const api: XStateApi<string, LatestStateMachine> = { name: path };
 
@@ -383,7 +383,7 @@ const actorObject = <
         ctx: restate.ObjectContext<State>,
         request?: {
           input?: InputFrom<LatestStateMachine>;
-        }
+        },
       ): Promise<Snapshot<unknown>> => {
         const systemName = ctx.key;
 
@@ -396,7 +396,7 @@ const actorObject = <
         const logic = getLogic(
           latestLogic,
           versions,
-          version
+          version,
         ) as LatestStateMachine;
 
         const root = (
@@ -420,7 +420,7 @@ const actorObject = <
           source?: SerialisableActorRef;
           target?: SerialisableActorRef;
           event: AnyEventObject;
-        }
+        },
       ): Promise<Snapshot<unknown> | undefined> => {
         const systemName = ctx.key;
 
@@ -435,14 +435,14 @@ const actorObject = <
           const events = (await ctx.get("events")) ?? {};
           const scheduledEventId = createScheduledEventId(
             request.scheduledEvent.source,
-            request.scheduledEvent.id
+            request.scheduledEvent.id,
           );
           if (!(scheduledEventId in events)) {
             ctx.console.log(
               "Received now cancelled event",
               scheduledEventId,
               "for target",
-              request.target
+              request.target,
             );
             return;
           }
@@ -451,7 +451,7 @@ const actorObject = <
               "Received now replaced event",
               scheduledEventId,
               "for target",
-              request.target
+              request.target,
             );
             return;
           }
@@ -465,18 +465,18 @@ const actorObject = <
             api,
             systemName,
             version,
-            logic
+            logic,
           )
         ).start();
 
         let actor;
         if (request.target) {
           actor = (root.system as RestateActorSystem<ActorSystemInfo>).actor(
-            request.target.sessionId
+            request.target.sessionId,
           );
           if (!actor) {
             throw new TerminalError(
-              `Actor ${request.target.id} not found; it may have since stopped`
+              `Actor ${request.target.id} not found; it may have since stopped`,
             );
           }
         } else {
@@ -486,7 +486,7 @@ const actorObject = <
         (root.system as RestateActorSystem<ActorSystemInfo>)._relay(
           request.source,
           actor,
-          request.event
+          request.event,
         );
 
         const nextSnapshot = root.getPersistedSnapshot();
@@ -495,7 +495,7 @@ const actorObject = <
         return nextSnapshot;
       },
       snapshot: async (
-        ctx: restate.ObjectContext<State>
+        ctx: restate.ObjectContext<State>,
       ): Promise<Snapshot<unknown>> => {
         const systemName = ctx.key;
 
@@ -525,7 +525,7 @@ const actorObject = <
             srcs: string[];
             input: unknown;
             version?: string;
-          }
+          },
         ) => {
           const systemName = ctx.key;
 
@@ -542,7 +542,7 @@ const actorObject = <
             "at version",
             version,
             "in system",
-            systemName
+            systemName,
           );
 
           const [promiseSrc, ...machineSrcs] = srcs;
@@ -555,19 +555,19 @@ const actorObject = <
             } catch (e) {
               throw new TerminalError(
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                `Failed to resolve promise actor ${src}: ${e}`
+                `Failed to resolve promise actor ${src}: ${e}`,
               );
             }
             if (maybeSM === undefined) {
               throw new TerminalError(
-                `Couldn't find state machine actor with src ${src}`
+                `Couldn't find state machine actor with src ${src}`,
               );
             }
             if ("implementations" in maybeSM) {
               stateMachine = maybeSM as AnyStateMachine;
             } else {
               throw new TerminalError(
-                `Couldn't recognise machine actor with src ${src}`
+                `Couldn't recognise machine actor with src ${src}`,
               );
             }
           }
@@ -579,12 +579,12 @@ const actorObject = <
           } catch (e) {
             throw new TerminalError(
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `Failed to resolve promise actor ${promiseSrc}: ${e}`
+              `Failed to resolve promise actor ${promiseSrc}: ${e}`,
             );
           }
           if (maybePA === undefined) {
             throw new TerminalError(
-              `Couldn't find promise actor with src ${promiseSrc}`
+              `Couldn't find promise actor with src ${promiseSrc}`,
             );
           }
           if (
@@ -594,7 +594,7 @@ const actorObject = <
             promiseActor = maybePA as PromiseActorLogic<unknown>;
           } else {
             throw new TerminalError(
-              `Couldn't recognise promise actor with src ${promiseSrc}`
+              `Couldn't recognise promise actor with src ${promiseSrc}`,
             );
           }
 
@@ -602,7 +602,7 @@ const actorObject = <
             (promiseActor.config as PromiseCreator<unknown, unknown>)({
               input,
               ctx: ctx as unknown as restate.ObjectSharedContext,
-            })
+            }),
           );
 
           await resolvedPromise.then(
@@ -625,9 +625,9 @@ const actorObject = <
                   data: errorData,
                 },
               });
-            }
+            },
           );
-        }
+        },
       ),
     },
   });
@@ -635,10 +635,10 @@ const actorObject = <
 
 async function getOrSetVersion<
   LatestVersion extends string,
-  PreviousVersion extends string
+  PreviousVersion extends string,
 >(
   ctx: restate.ObjectContext<State>,
-  latestVersion: LatestVersion
+  latestVersion: LatestVersion,
 ): Promise<LatestVersion | PreviousVersion> {
   let version = (await ctx.get("version")) as
     | LatestVersion
@@ -653,17 +653,17 @@ async function getOrSetVersion<
 
 function getLogic<
   LatestStateMachine extends AnyStateMachine,
-  PreviousStateMachine extends AnyStateMachine
+  PreviousStateMachine extends AnyStateMachine,
 >(
   latestLogic: LatestStateMachine,
   previousVersions: PreviousStateMachine[],
-  version: string
+  version: string,
 ): LatestStateMachine | PreviousStateMachine {
   if (latestLogic.id === version) return latestLogic;
   const i = previousVersions.findIndex((v) => v.id === version);
   if (i !== -1) return previousVersions[i];
   throw new restate.TerminalError(
-    `The state refers to a version ${version} which is not present in the code`
+    `The state refers to a version ${version} which is not present in the code`,
   );
 }
 
@@ -674,22 +674,22 @@ export interface XStateOptions<PreviousStateMachine extends AnyStateMachine> {
 export const xstate = <
   P extends string,
   LatestStateMachine extends AnyStateMachine,
-  PreviousStateMachine extends AnyStateMachine = never
+  PreviousStateMachine extends AnyStateMachine = never,
 >(
   path: P,
   logic: LatestStateMachine,
-  options?: XStateOptions<PreviousStateMachine>
+  options?: XStateOptions<PreviousStateMachine>,
 ): XStateApi<P, LatestStateMachine> => {
   if (options?.versions) {
     const idsSet = new Set<string>();
     for (const version of options.versions) {
       if (version.id == logic.id)
         throw new Error(
-          `State machine ID ${version.id} is used in both the latest and a previous version; IDs must be unique across versions`
+          `State machine ID ${version.id} is used in both the latest and a previous version; IDs must be unique across versions`,
         );
       if (idsSet.has(version.id))
         throw new Error(
-          `State machine ID ${version.id} is used in two previous versions; IDs must be unique across versions`
+          `State machine ID ${version.id} is used in two previous versions; IDs must be unique across versions`,
         );
       idsSet.add(version.id);
     }
@@ -700,12 +700,12 @@ export const xstate = <
 
 type XStateApi<
   P extends string,
-  LatestStateMachine extends AnyStateMachine
+  LatestStateMachine extends AnyStateMachine,
 > = ReturnType<typeof actorObject<P, LatestStateMachine, AnyStateMachine>>;
 
 function createScheduledEventId(
   actorRef: SerialisableActorRef,
-  id: string
+  id: string,
 ): string {
   return `${actorRef.sessionId}.${id}`;
 }
