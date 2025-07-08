@@ -40,13 +40,16 @@ describe("Simple count machine", () => {
     async () => {
       const counter = xstate("counter", countMachine);
 
-      const snapshot = await runMachine<{ context: { count: number } }>(
-        counter,
-        "foo",
-        [{ type: "inc" }, { type: "inc" }, { type: "dec" }]
-      );
+      using machine = await runMachine<{ context: { count: number } }>({
+        machine: counter,
+      });
 
-      expect(snapshot.context.count).toBe(1);
-    }
+      await machine.send({ type: "inc" });
+      await machine.send({ type: "inc" });
+      await machine.send({ type: "dec" });
+
+      const snap = await machine.snapshot();
+      expect(snap.context.count).toBe(1);
+    },
   );
 });

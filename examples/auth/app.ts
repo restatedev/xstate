@@ -33,7 +33,7 @@ const authServerMachine = createMachine(
             actions: sendTo(
               ({ self }) => self._parent!,
               { type: "TOKEN" },
-              { delay: 1000 }
+              { delay: 1000 },
             ),
           },
         },
@@ -43,10 +43,10 @@ const authServerMachine = createMachine(
   {
     actors: {
       authorise: fromPromise(
-        () => new Promise((resolve) => setTimeout(resolve, 5000))
+        () => new Promise((resolve) => setTimeout(resolve, 5000)),
       ),
     },
-  }
+  },
 );
 
 const authClientMachine = createMachine({

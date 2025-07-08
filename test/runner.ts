@@ -17,47 +17,64 @@ import { type VirtualObjectDefinition } from "@restatedev/restate-sdk";
 import * as clients from "@restatedev/restate-sdk-clients";
 import { type AnyEventObject } from "xstate";
 
-// given an xstate generated machine and set of events, produce the latest snapshot.
-export async function runMachine<ReturnType>(
-  xs: VirtualObjectDefinition<
-    string,
-    {
-      create: (context: unknown) => Promise<unknown>;
-      send: (
-        context: unknown,
-        args: { event: AnyEventObject }
-      ) => Promise<unknown>;
-    }
-  >,
-  key: string,
-  events: AnyEventObject[]
-): Promise<ReturnType> {
-  let env: RestateTestEnvironment | undefined = undefined;
+export type MachineApi = {
+  create: (context: unknown, request?: { input: unknown }) => Promise<unknown>;
+
+  send: (context: unknown, args: { event: AnyEventObject }) => Promise<unknown>;
+
+  snapshot: (context: unknown) => Promise<unknown>;
+};
+
+export type RunMachineOptions = {
+  machine: VirtualObjectDefinition<string, MachineApi>;
+  key?: string;
+  input?: unknown;
+};
+
+export type RunningMachine<SnapshotType> = {
+  send: (event: AnyEventObject) => Promise<SnapshotType>;
+  snapshot(): Promise<SnapshotType>;
+  [Symbol.dispose](): void;
+};
+
+export async function runMachine<SnapshotType>(
+  opts: RunMachineOptions,
+): Promise<RunningMachine<SnapshotType>> {
+  const env = await RestateTestEnvironment.start(
+    (restateServer) => {
+      restateServer.bind(opts.machine);
+    },
+    () =>
+      new RestateContainer().withEnvironment({
+        RESTATE_DEFAULT_NUM_PARTITIONS: "2",
+        RESTATE_ROCKSDB_TOTAL_MEMORY_SIZE: "64 MB",
+        RESTATE_DISABLE_TELEMETRY: "true",
+      }),
+  );
+
   try {
-    env = await RestateTestEnvironment.start(
-      (restateServer) => {
-        restateServer.bind(xs);
-      },
-      () =>
-        new RestateContainer().withEnvironment({
-          RESTATE_DEFAULT_NUM_PARTITIONS: "2",
-          RESTATE_ROCKSDB_TOTAL_MEMORY_SIZE: "64 MB",
-          RESTATE_DISABLE_TELEMETRY: "true",
-        })
-    );
-
     const rs = clients.connect({ url: env.baseUrl() });
-    const client = rs.objectClient(xs, key);
+    const client = rs.objectClient(opts.machine, opts.key ?? "default");
+    await client.create({ input: opts.input ?? {} });
+    return {
+      send: async (event: AnyEventObject) => {
+        return (await client.send({ event })) as SnapshotType;
+      },
 
-    let res = await client.create();
-    for (const event of events) {
-      res = await client.send({ event });
-    }
+      snapshot: async () => {
+        return (await client.snapshot()) as SnapshotType;
+      },
 
-    return res as ReturnType;
-  } finally {
+      [Symbol.dispose]: () => {
+        env.stop().catch((err) => {
+          console.error("Error stopping environment:", err);
+        });
+      },
+    };
+  } catch (error) {
     if (env !== undefined) {
       await env.stop();
     }
+    throw error;
   }
 }

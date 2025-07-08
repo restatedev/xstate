@@ -59,6 +59,6 @@ await restate
   .bind(
     xstate("counter", counterv2, {
       versions: [counterv1],
-    })
+    }),
   )
   .listen();
