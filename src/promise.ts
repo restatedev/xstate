@@ -3,15 +3,11 @@ import type {
   ActorRefFrom,
   ActorSystem,
   ActorSystemInfo,
-  AnyActorLogic,
   AnyActorRef,
-  AnyInvokeConfig,
-  AnyStateMachine,
   NonReducibleUnknown,
   Snapshot,
 } from "xstate";
 import type { ActorRefEventSender, RestateActorSystem } from "./lib.js";
-import type { ObjectSharedContext } from "@restatedev/restate-sdk";
 import {
   RESTATE_PROMISE_REJECT,
   RESTATE_PROMISE_RESOLVE,
