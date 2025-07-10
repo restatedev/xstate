@@ -78,3 +78,15 @@ export async function runMachine<SnapshotType>(
     throw error;
   }
 }
+
+export const eventually = async (op: () => Promise<void>) => {
+  while (true) {
+    try {
+      await op();
+      return;
+    } catch (e) {
+      console.log("retrying %s", e);
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 250));
+  }
+};
