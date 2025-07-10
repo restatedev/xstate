@@ -34,9 +34,7 @@ export type PromiseActorLogic<TOutput, TInput = unknown> = ActorLogic<
   config: PromiseCreator<TOutput, TInput>;
 };
 
-export type PromiseActorRef<TOutput> = ActorRefFrom<
-  PromiseActorLogic<TOutput, unknown>
->;
+export type PromiseActorRef<TOutput> = ActorRefFrom<PromiseActorLogic<TOutput>>;
 
 export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
   promiseCreator: PromiseCreator<TOutput, TInput>,

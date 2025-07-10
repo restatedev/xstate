@@ -10,18 +10,18 @@ export function resolveReferencedActor(
   machine: AnyStateMachine,
   src: string,
 ): AnyActorLogic | undefined {
-  const match = src.match(/^xstate\.invoke\.(\d+)\.(.*)/)!;
+  const match = src.match(/^xstate\.invoke\.(\d+)\.(.*)/);
   const [, indexStr, nodeId] = match ?? [];
   if (!match || !nodeId) {
     return machine.implementations.actors[src] as AnyActorLogic;
   }
   const node = machine.getStateNodeById(nodeId);
-  const invokeConfig = node.config.invoke!;
+  const invokeConfig = node.config.invoke;
   return (
     Array.isArray(invokeConfig)
       ? (invokeConfig[Number(indexStr)] as AnyInvokeConfig)
       : (invokeConfig as AnyInvokeConfig)
-  )?.src as AnyActorLogic;
+  ).src as AnyActorLogic;
 }
 
 export const serialiseActorRef = (

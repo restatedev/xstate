@@ -48,7 +48,7 @@ export interface RestateActorSystem<T extends ActorSystemInfo>
   version: string;
 }
 
-type SerialisableScheduledEvent = {
+export type SerialisableScheduledEvent = {
   id: string;
   event: EventObject;
   startedAt: number;
@@ -58,7 +58,7 @@ type SerialisableScheduledEvent = {
   uuid: string;
 };
 
-type State = {
+export type State = {
   version: string;
   events: { [key: string]: SerialisableScheduledEvent };
   children: { [key: string]: SerialisableActorRef };
@@ -148,6 +148,7 @@ async function createSystem<T extends ActorSystemInfo>(
         id,
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete events[scheduledEventId];
       ctx.set("events", events);
     },
@@ -159,6 +160,7 @@ async function createSystem<T extends ActorSystemInfo>(
       for (const scheduledEventId in events) {
         const scheduledEvent = events[scheduledEventId];
         if (scheduledEvent?.source.sessionId === actorRef.sessionId) {
+          // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
           delete events[scheduledEventId];
         }
       }
@@ -174,7 +176,7 @@ async function createSystem<T extends ActorSystemInfo>(
 
     _bookId: () => ctx.rand.uuidv4(),
     _register: (sessionId, actorRef) => {
-      const existingSessionId = childrenByID?.[actorRef.id]?.sessionId;
+      const existingSessionId = childrenByID[actorRef.id]?.sessionId;
 
       if (existingSessionId) {
         // rehydration case; ensure session ID maintains continuity
@@ -189,13 +191,14 @@ async function createSystem<T extends ActorSystemInfo>(
       return sessionId;
     },
     _unregister: (actorRef) => {
-      const sessionId = childrenByID?.[actorRef.id]?.sessionId;
+      const sessionId = childrenByID[actorRef.id]?.sessionId;
       if (sessionId) {
         // rehydration case; ensure session ID maintains continuity
         actorRef.sessionId = sessionId;
       }
 
       children.delete(actorRef.sessionId);
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete childrenByID[actorRef.id];
       ctx.set("children", childrenByID);
       const systemId = reverseKeyedActors.get(actorRef);
@@ -261,7 +264,9 @@ async function createSystem<T extends ActorSystemInfo>(
       };
     },
     start: () => {},
-    _logger: (...args: unknown[]) => ctx.console.log(...args),
+    _logger: (...args: unknown[]) => {
+      ctx.console.log(...args);
+    },
     _clock: {
       setTimeout() {
         throw new Error("clock should be unused");
@@ -430,9 +435,7 @@ const actorObject = <
             );
             return;
           }
-          if (
-            events?.[scheduledEventId]?.uuid !== request.scheduledEvent.uuid
-          ) {
+          if (events[scheduledEventId]?.uuid !== request.scheduledEvent.uuid) {
             ctx.console.log(
               "Received now replaced event",
               scheduledEventId,
@@ -441,6 +444,7 @@ const actorObject = <
             );
             return;
           }
+          // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
           delete events[scheduledEventId];
           ctx.set("events", events);
         }
@@ -540,8 +544,7 @@ const actorObject = <
               maybeSM = resolveReferencedActor(stateMachine, src);
             } catch (e) {
               throw new TerminalError(
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                `Failed to resolve promise actor ${src}: ${e}`,
+                `Failed to resolve promise actor ${src}: ${String(e)}`,
               );
             }
             if (maybeSM === undefined) {
@@ -567,13 +570,12 @@ const actorObject = <
                 : undefined;
           } catch (e) {
             throw new TerminalError(
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `Failed to resolve promise actor ${promiseSrc}: ${e}`,
+              `Failed to resolve promise actor ${String(promiseSrc)}: ${String(e)}`,
             );
           }
           if (maybePA === undefined) {
             throw new TerminalError(
-              `Couldn't find promise actor with src ${promiseSrc}`,
+              `Couldn't find promise actor with src ${String(promiseSrc)}`,
             );
           }
           if (
@@ -583,7 +585,7 @@ const actorObject = <
             promiseActor = maybePA as PromiseActorLogic<unknown>;
           } else {
             throw new TerminalError(
-              `Couldn't recognise promise actor with src ${promiseSrc}`,
+              `Couldn't recognise promise actor with src ${String(promiseSrc)}`,
             );
           }
 
@@ -621,6 +623,45 @@ const actorObject = <
     },
   });
 };
+
+export type ActorObject<
+  P extends string,
+  LatestStateMachine extends AnyStateMachine,
+  PreviousStateMachine extends AnyStateMachine,
+> = (
+  path: P,
+  latestLogic: LatestStateMachine,
+  options?: XStateOptions<PreviousStateMachine>,
+) => restate.VirtualObjectDefinition<
+  P,
+  {
+    create: (
+      ctx: restate.ObjectContext<State>,
+      request?: {
+        input?: InputFrom<LatestStateMachine>;
+      },
+    ) => Promise<Snapshot<unknown>>;
+    send: (
+      ctx: restate.ObjectContext<State>,
+      request?: {
+        scheduledEvent?: SerialisableScheduledEvent;
+        source?: SerialisableActorRef;
+        target?: SerialisableActorRef;
+        event: AnyEventObject;
+      },
+    ) => Promise<Snapshot<unknown> | undefined>;
+    snapshot: (ctx: restate.ObjectContext<State>) => Promise<Snapshot<unknown>>;
+    invokePromise: (
+      ctx: restate.ObjectSharedContext<State>,
+      input: {
+        self: SerialisableActorRef;
+        srcs: string[];
+        input: unknown;
+        version?: string;
+      },
+    ) => Promise<void>;
+  }
+>;
 
 async function getOrSetVersion<
   LatestVersion extends string,
@@ -689,10 +730,10 @@ export const xstate = <
   return actorObject(path, logic, options);
 };
 
-type XStateApi<
+export type XStateApi<
   P extends string,
   LatestStateMachine extends AnyStateMachine,
-> = ReturnType<typeof actorObject<P, LatestStateMachine, AnyStateMachine>>;
+> = ReturnType<ActorObject<P, LatestStateMachine, AnyStateMachine>>;
 
 function createScheduledEventId(
   actorRef: SerialisableActorRef,
