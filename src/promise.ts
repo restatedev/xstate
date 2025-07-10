@@ -10,12 +10,14 @@ import type {
   NonReducibleUnknown,
   Snapshot,
 } from "xstate";
-import {
-  serialiseActorRef,
-  type ActorRefEventSender,
-  type RestateActorSystem,
-} from "./lib.js";
+import type { ActorRefEventSender, RestateActorSystem } from "./lib.js";
 import type { ObjectSharedContext } from "@restatedev/restate-sdk";
+import {
+  RESTATE_PROMISE_REJECT,
+  RESTATE_PROMISE_RESOLVE,
+} from "./constants.js";
+import { serialiseActorRef } from "./utils.js";
+import type { PromiseCreator } from "./types.js";
 
 export type PromiseSnapshot<TOutput, TInput> = Snapshot<TOutput> & {
   input: TInput | undefined;
@@ -23,17 +25,8 @@ export type PromiseSnapshot<TOutput, TInput> = Snapshot<TOutput> & {
 };
 
 const RESTATE_PROMISE_SENT = "restate.promise.sent";
-export const RESTATE_PROMISE_RESOLVE = "restate.promise.resolve";
-export const RESTATE_PROMISE_REJECT = "restate.promise.reject";
-const XSTATE_STOP = "xstate.stop";
 
-export type PromiseCreator<TOutput, TInput extends NonReducibleUnknown> = ({
-  input,
-  ctx,
-}: {
-  input: TInput;
-  ctx: ObjectSharedContext;
-}) => PromiseLike<TOutput>;
+const XSTATE_STOP = "xstate.stop";
 
 export type PromiseActorLogic<TOutput, TInput = unknown> = ActorLogic<
   PromiseSnapshot<TOutput, TInput>,
@@ -141,22 +134,4 @@ function actorSrc(actor?: AnyActorRef): string[] {
     return [];
   }
   return [actor.src, ...actorSrc(actor._parent)];
-}
-
-export function resolveReferencedActor(
-  machine: AnyStateMachine,
-  src: string,
-): AnyActorLogic | undefined {
-  const match = src.match(/^xstate\.invoke\.(\d+)\.(.*)/)!;
-  if (!match) {
-    return machine.implementations.actors[src] as AnyActorLogic;
-  }
-  const [, indexStr, nodeId] = match;
-  const node = machine.getStateNodeById(nodeId);
-  const invokeConfig = node.config.invoke!;
-  return (
-    Array.isArray(invokeConfig)
-      ? (invokeConfig[Number(indexStr)] as AnyInvokeConfig)
-      : (invokeConfig as AnyInvokeConfig)
-  )?.src as AnyActorLogic;
 }

@@ -21,11 +21,11 @@ import { toObserver, createActor as createXActor } from "xstate";
 import * as restate from "@restatedev/restate-sdk";
 import { TerminalError } from "@restatedev/restate-sdk";
 import {
-  type PromiseCreator,
-  resolveReferencedActor,
   RESTATE_PROMISE_REJECT,
   RESTATE_PROMISE_RESOLVE,
-} from "./promise.js";
+} from "./constants.js";
+import type { PromiseCreator, SerialisableActorRef } from "./types.js";
+import { resolveReferencedActor, serialiseActorRef } from "./utils.js";
 
 export interface RestateActorSystem<T extends ActorSystemInfo>
   extends ActorSystem<T> {
@@ -47,25 +47,6 @@ export interface RestateActorSystem<T extends ActorSystemInfo>
   systemName: string;
   version: string;
 }
-
-type SerialisableActorRef = {
-  id: string;
-  sessionId: string;
-  _parent?: SerialisableActorRef;
-};
-
-export const serialiseActorRef = (
-  actorRef: AnyActorRef,
-): SerialisableActorRef => {
-  return {
-    id: actorRef.id,
-    sessionId: actorRef.sessionId,
-    _parent:
-      actorRef._parent === undefined
-        ? undefined
-        : serialiseActorRef(actorRef._parent),
-  };
-};
 
 type SerialisableScheduledEvent = {
   id: string;
@@ -177,7 +158,7 @@ async function createSystem<T extends ActorSystemInfo>(
 
       for (const scheduledEventId in events) {
         const scheduledEvent = events[scheduledEventId];
-        if (scheduledEvent.source.sessionId === actorRef.sessionId) {
+        if (scheduledEvent?.source.sessionId === actorRef.sessionId) {
           delete events[scheduledEventId];
         }
       }
@@ -193,9 +174,11 @@ async function createSystem<T extends ActorSystemInfo>(
 
     _bookId: () => ctx.rand.uuidv4(),
     _register: (sessionId, actorRef) => {
-      if (actorRef.id in childrenByID) {
+      const existingSessionId = childrenByID?.[actorRef.id]?.sessionId;
+
+      if (existingSessionId) {
         // rehydration case; ensure session ID maintains continuity
-        sessionId = childrenByID[actorRef.id].sessionId;
+        sessionId = existingSessionId;
         actorRef.sessionId = sessionId;
       } else {
         // new actor case
@@ -206,9 +189,10 @@ async function createSystem<T extends ActorSystemInfo>(
       return sessionId;
     },
     _unregister: (actorRef) => {
-      if (actorRef.id in childrenByID) {
+      const sessionId = childrenByID?.[actorRef.id]?.sessionId;
+      if (sessionId) {
         // rehydration case; ensure session ID maintains continuity
-        actorRef.sessionId = childrenByID[actorRef.id].sessionId;
+        actorRef.sessionId = sessionId;
       }
 
       children.delete(actorRef.sessionId);
@@ -446,7 +430,9 @@ const actorObject = <
             );
             return;
           }
-          if (events[scheduledEventId].uuid !== request.scheduledEvent.uuid) {
+          if (
+            events?.[scheduledEventId]?.uuid !== request.scheduledEvent.uuid
+          ) {
             ctx.console.log(
               "Received now replaced event",
               scheduledEventId,
@@ -575,7 +561,10 @@ const actorObject = <
           let promiseActor: PromiseActorLogic<unknown> | undefined;
           let maybePA;
           try {
-            maybePA = resolveReferencedActor(stateMachine, promiseSrc);
+            maybePA =
+              typeof promiseSrc === "string"
+                ? resolveReferencedActor(stateMachine, promiseSrc)
+                : undefined;
           } catch (e) {
             throw new TerminalError(
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -660,8 +649,10 @@ function getLogic<
   version: string,
 ): LatestStateMachine | PreviousStateMachine {
   if (latestLogic.id === version) return latestLogic;
-  const i = previousVersions.findIndex((v) => v.id === version);
-  if (i !== -1) return previousVersions[i];
+  const previousVersion = previousVersions.find((v) => v.id === version);
+  if (previousVersion) {
+    return previousVersion;
+  }
   throw new restate.TerminalError(
     `The state refers to a version ${version} which is not present in the code`,
   );
