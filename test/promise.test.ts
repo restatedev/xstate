@@ -14,7 +14,7 @@
 
 import { xstate, fromPromise } from "../src/public_api.js";
 import { describe, it, expect } from "vitest";
-import { runMachine } from "./runner.js";
+import { eventually, runMachine } from "./runner.js";
 
 import { setup } from "xstate";
 
@@ -74,14 +74,11 @@ describe("A fromPromise based state machine", () => {
         input: { customer: "bob@mop.com" },
       });
 
-      // eventually the following should be true
-      while (true) {
-        const snap = await machine.snapshot();
-        if (snap?.status === "done") {
-          return;
-        }
-        await new Promise<void>((resolve) => setTimeout(resolve, 250));
-      }
+      await eventually(async () => {
+        const snapshot = await machine.snapshot();
+        expect(snapshot).toBeDefined();
+        expect(snapshot!.status).toStrictEqual("done");
+      });
     },
   );
 });

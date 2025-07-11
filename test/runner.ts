@@ -78,3 +78,16 @@ export async function runMachine<SnapshotType>(
     throw error;
   }
 }
+
+export const eventually = async (op: () => Promise<void> | void) => {
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    try {
+      await op();
+      return;
+    } catch (e) {
+      // suppress the error and retry
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 250));
+  }
+};
