@@ -88,3 +88,7 @@ restate sql "with keys as
     (select service_key from state where key = 'snapshot' and json_get_str(value_utf8, 'status') != 'done')
     select state.service_key, state.value_utf8 from keys right join state where keys.service_key = state.service_key and key = 'version'"
 ```
+
+## 🛠 Contributing
+
+Please see the [Development Guide](./DEVELOPMENT.md) for setup instructions, testing, linting, and release workflow.
