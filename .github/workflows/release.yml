@@ -24,7 +24,7 @@ jobs:
       - name: Check if tag exists
         id: check_tag
         env:
-          GH_TOKEN: ${{ secrets.REPO_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_NAME="${{ steps.get_version.outputs.tag }}"
           echo "Checking if tag $TAG_NAME exists..."
