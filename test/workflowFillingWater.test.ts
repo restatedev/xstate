@@ -20,7 +20,7 @@ import { xstate } from "../src/public_api.js";
 import { describe, it, expect } from "vitest";
 import { eventually, runMachine } from "./runner.js";
 
-import { createMachine, assign, createActor } from "xstate";
+import { createMachine, assign } from "xstate";
 
 // https://github.com/serverlessworkflow/specification/blob/main/examples/README.md#filling-a-glass-of-water
 export const workflow = createMachine({

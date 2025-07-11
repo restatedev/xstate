@@ -46,14 +46,14 @@ export const workflow = setup({
   },
   actors: {
     callCreditCheckMicroservice: fromPromise(
-      async ({ input }: { input: { customer: Customer } }) => {
+      ({ input }: { input: { customer: Customer } }) => {
         console.log("calling credit check microservice", input);
-        return {
+        return Promise.resolve({
           id: "customer123",
           score: 700,
           decision: "Approved" as const,
           reason: "Good credit score",
-        };
+        });
       },
     ),
     startApplicationWorkflowId: fromPromise(
