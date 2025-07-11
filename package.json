@@ -3,75 +3,40 @@
   "version": "0.2.0",
   "description": "Run XState state machines on Restate",
   "license": "MIT",
+  "type": "module",
   "author": "Restate developers",
   "email": "code@restate.dev",
-  "type": "module",
-  "main": "./dist/cjs/src/public_api.js",
-  "types": "./dist/cjs/src/public_api.d.ts",
-  "module": "./dist/esm/src/public_api.js",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/esm/src/public_api.d.ts",
-        "default": "./dist/esm/src/public_api.js"
-      },
-      "require": {
-        "types": "./dist/cjs/src/public_api.d.ts",
-        "default": "./dist/cjs/src/public_api.js"
-      }
-    }
-  },
-  "files": [
-    "dist"
-  ],
+  "private": true,
   "scripts": {
-    "clean": "rm -rf dist",
-    "build": "npm run build:cjs && npm run build:esm",
-    "build:cjs": "tsc --module commonjs --verbatimModuleSyntax false --moduleResolution node10 --outDir ./dist/cjs --declaration --declarationDir ./dist/cjs && echo >./dist/cjs/package.json '{\"type\":\"commonjs\"}'",
-    "build:esm": "tsc --outDir ./dist/esm --declaration --declarationDir ./dist/esm",
-    "test": "vitest run --passWithNoTests",
-    "lint": "eslint --ignore-path .eslintignore --max-warnings=0 --ext .ts .",
-    "format": "prettier --ignore-path .eslintignore --write \"**/*.+(js|ts|json)\"",
-    "format-check": "prettier --ignore-path .eslintignore --check \"**/*.+(js|ts|json)\"",
-    "attw": "attw --pack",
-    "verify": "npm run format-check && npm run lint && npm run test && npm run build && npm run attw",
-    "release": "release-it",
-    "auth-example": "tsx --watch examples/auth/app.ts",
-    "payment-example": "tsx --watch examples/payment/app.ts",
-    "versioning-example": "tsx --watch examples/versioning/app.ts"
-  },
-  "dependencies": {
-    "@restatedev/restate-sdk": "^1.7.0",
-    "xstate": "^5.18.0"
+    "preinstall": "npx only-allow pnpm",
+    "clean": "pnpm -r clean",
+    "prebuild": "pnpm clean",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "verify": "pnpm format-check && pnpm build && pnpm test && pnpm lint",
+    "format": "prettier --write .",
+    "format-check": "prettier --check ."
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.15.3",
-    "@types/node": "^20.19.0",
-    "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0",
-    "eslint": "^8.57.0",
-    "eslint-import-resolver-typescript": "^3.6.1",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-require-extensions": "^0.1.3",
+    "@arethetypeswrong/cli": "^0.18.2",
+    "@changesets/cli": "^2.29.5",
+    "@eslint/js": "^9.30.1",
+    "@eslint/json": "^0.12.0",
+    "@eslint/markdown": "^6.6.0",
+    "@microsoft/api-extractor": "^7.52.8",
+    "@types/node": "^24.0.10",
+    "@typescript-eslint/eslint-plugin": "^8.36.0",
+    "@typescript-eslint/parser": "^8.36.0",
+    "eslint": "^9.30.1",
+    "eslint-plugin-jsdoc": "^51.3.4",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "globals": "^16.3.0",
     "prettier": "^3.6.2",
-    "release-it": "^19.0.3",
-    "tsx": "^4.19.0",
+    "tsdown": "^0.12.9",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4",
-    "@restatedev/restate-sdk-testcontainers": "^1.7.0"
+    "typescript-eslint": "^8.36.0",
+    "vitest": "^3.2.4"
   },
-  "publishConfig": {
-    "@restatedev:registry": "https://registry.npmjs.org"
-  },
-  "release-it": {
-    "git": {
-      "pushRepo": "https://github.com/restatedev/xstate.git"
-    },
-    "github": {
-      "release": true
-    },
-    "npm": {
-      "publish": "false"
-    }
-  }
+  "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad"
 }

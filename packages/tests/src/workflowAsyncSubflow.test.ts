@@ -12,7 +12,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable no-constant-condition */
 
-import { xstate, fromPromise } from "../src/public_api.js";
+import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
 import { eventually, runMachine } from "./runner.js";
 

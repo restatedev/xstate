@@ -13,7 +13,7 @@ import {
   RestateContainer,
   RestateTestEnvironment,
 } from "@restatedev/restate-sdk-testcontainers";
-import { type VirtualObjectDefinition } from "@restatedev/restate-sdk";
+import type { VirtualObjectDefinition } from "@restatedev/restate-sdk";
 import * as clients from "@restatedev/restate-sdk-clients";
 import { type AnyEventObject } from "xstate";
 
@@ -53,7 +53,9 @@ export async function runMachine<SnapshotType>(
   );
 
   try {
-    const rs = clients.connect({ url: env.baseUrl() });
+    const rs = clients.connect({
+      url: env.baseUrl(),
+    });
     const client = rs.objectClient(opts.machine, opts.key ?? "default");
     await client.create({ input: opts.input ?? {} });
     return {
@@ -66,13 +68,13 @@ export async function runMachine<SnapshotType>(
       },
 
       [Symbol.dispose]: () => {
-        env.stop().catch((err) => {
+        env.stop().catch((err: unknown) => {
           console.error("Error stopping environment:", err);
         });
       },
     };
   } catch (error) {
-    if (env !== undefined) {
+    if (typeof env !== "undefined") {
       await env.stop();
     }
     throw error;

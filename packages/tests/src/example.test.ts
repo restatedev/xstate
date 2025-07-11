@@ -9,7 +9,7 @@
  * https://github.com/restatedev/sdk-typescript/blob/main/LICENSE
  */
 
-import { xstate } from "../src/public_api.js";
+import { xstate } from "@restatedev/xstate";
 import { createMachine, assign } from "xstate";
 import { describe, it, expect } from "vitest";
 import { runMachine } from "./runner.js";

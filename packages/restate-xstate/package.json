@@ -1,0 +1,47 @@
+{
+  "name": "@restatedev/xstate",
+  "version": "0.2.0",
+  "description": "Run XState state machines on Restate",
+  "license": "MIT",
+  "author": "Restate developers",
+  "email": "code@restate.dev",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "prebuild": "tsc --noEmit",
+    "build": "tsdown",
+    "postbuild": "pnpm exports-check && pnpm check-forgotten-exports",
+    "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
+    "exports-check": "attw --pack .",
+    "lint": "eslint",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "local-release": "changeset publish",
+    "prepublishOnly": "npm run ci",
+    "check-forgotten-exports": "api-extractor run --local"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@restatedev/restate-sdk-testcontainers": "^1.7.0",
+    "@restatedev/restate-sdk-clients": "^1.7.0"
+  },
+  "peerDependencies": {
+    "@restatedev/restate-sdk": "^1.7.0",
+    "xstate": "^5.18.0"
+  },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  }
+}

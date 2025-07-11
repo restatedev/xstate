@@ -11,7 +11,7 @@
 
 import * as restate from "@restatedev/restate-sdk";
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { createMachine, sendTo } from "xstate";
+import { createMachine, sendTo, type AnyActorRef } from "xstate";
 
 const authServerMachine = createMachine(
   {
@@ -31,7 +31,7 @@ const authServerMachine = createMachine(
           src: "authorise",
           onDone: {
             actions: sendTo(
-              ({ self }) => self._parent!,
+              ({ self }) => self._parent as AnyActorRef,
               { type: "TOKEN" },
               { delay: 1000 },
             ),

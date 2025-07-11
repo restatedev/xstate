@@ -1,27 +1,8 @@
 {
-  "compilerOptions": {
-    "composite": true,
-    "baseUrl": ".",
-    "outDir": "./dist/esm",
-    "target": "esnext",
-    "module": "nodenext",
-    "lib": ["esnext"],
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "allowJs": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
-    /* Strictness */
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-
-    "paths": {
-      "@restatedev/xstate": ["./src/public_api.ts"]
-    }
-  },
-  "include": ["src/**/*.ts"]
+  "files": [],
+  "references": [
+    { "path": "packages/restate-xstate" },
+    { "path": "packages/tests" },
+    { "path": "packages/examples" }
+  ]
 }
