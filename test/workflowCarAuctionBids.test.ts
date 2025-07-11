@@ -70,7 +70,7 @@ export const workflow = createMachine(
     output: ({ context }) => ({
       // highest bid
       winningBid: context.bids.reduce((prev, current) =>
-        prev.amount > current.amount ? prev : current
+        prev.amount > current.amount ? prev : current,
       ),
     }),
   },
@@ -78,7 +78,7 @@ export const workflow = createMachine(
     delays: {
       BiddingDelay: 3000,
     },
-  }
+  },
 );
 
 describe("A car auction bidding workflow", () => {
