@@ -12,8 +12,11 @@
     "clean": "pnpm -r clean",
     "prebuild": "pnpm clean",
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "dev": "FORCE_COLOR=1 pnpm -r dev",
+    "test": "pnpm build && vitest run",
+    "test:watch": "vitest watch",
     "lint": "pnpm -r lint",
+    "examples": "pnpm --filter @restatedev/xstate-examples dev",
     "verify": "pnpm format-check && pnpm build && pnpm test && pnpm lint",
     "format": "prettier --write .",
     "format-check": "prettier --check ."
@@ -34,6 +37,7 @@
     "globals": "^16.3.0",
     "prettier": "^3.6.2",
     "tsdown": "^0.12.9",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.36.0",
     "vitest": "^3.2.4"

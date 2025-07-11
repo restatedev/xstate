@@ -1,5 +1,5 @@
 {
-  "name": "@restatedev/xstate-examples",
+  "name": "examples",
   "version": "0.2.0",
   "description": "Restate + XState examples",
   "license": "MIT",
@@ -10,7 +10,8 @@
   "scripts": {
     "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
     "build": "tsc -b",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev": "tsx watch --include ../restate-xstate/src ./src/auth/app.ts & tsx watch --include ../restate-xstate/src ./src/payment/app.ts & tsx watch --include ../restate-xstate/src  ./src/versioning/app.ts"
   },
   "dependencies": {
     "@restatedev/restate-sdk": "^1.7.0",

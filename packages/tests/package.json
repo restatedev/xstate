@@ -1,7 +1,7 @@
 {
-  "name": "@restatedev/xstate-tests",
+  "name": "tests",
   "version": "0.2.0",
-  "description": "Run XState state machines on Restate",
+  "description": "Restate + XState tests",
   "license": "MIT",
   "author": "Restate developers",
   "email": "code@restate.dev",
@@ -9,7 +9,8 @@
   "private": true,
   "scripts": {
     "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
+    "dev": "pnpm -w test:watch --project=tests",
     "build": "tsc -b",
     "lint": "eslint"
   },

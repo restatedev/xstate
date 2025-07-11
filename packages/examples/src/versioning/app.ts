@@ -61,4 +61,4 @@ await restate
       versions: [counterv1],
     }),
   )
-  .listen();
+  .listen(9082);

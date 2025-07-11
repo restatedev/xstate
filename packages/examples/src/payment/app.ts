@@ -121,4 +121,4 @@ export const machine = setup({
   },
 });
 
-await restate.endpoint().bind(xstate("payment", machine)).listen();
+await restate.endpoint().bind(xstate("payment", machine)).listen(9081);

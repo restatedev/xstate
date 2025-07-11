@@ -77,4 +77,4 @@ const authClientMachine = createMachine({
   },
 });
 
-await restate.endpoint().bind(xstate("auth", authClientMachine)).listen();
+await restate.endpoint().bind(xstate("auth", authClientMachine)).listen(9080);
