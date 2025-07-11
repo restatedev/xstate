@@ -54,7 +54,7 @@ const onboardingWorkflow = setup({
       invoke: {
         src: "prompt",
         input: ({ context }) => ({
-          question: `Welcome ${context.name}, press enter to finish the onboarding process`,
+          question: `Welcome ${String(context.name)}, press enter to finish the onboarding process`,
         }),
         onDone: "Completed",
       },

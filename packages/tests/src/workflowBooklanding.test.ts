@@ -24,6 +24,7 @@ async function delay(ms: number, errorProbability: number = 0): Promise<void> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       if (Math.random() < errorProbability) {
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         reject({ type: "ServiceNotAvailable" });
       } else {
         resolve();
@@ -89,12 +90,13 @@ export const workflow = createMachine(
         invoke: {
           src: "Get status for book",
           input: ({ context }) => ({
-            bookid: context.book!.id,
+            bookid: context.book?.id,
           }),
           onDone: {
             target: "Book Status Decision",
             actions: assign({
               book: ({ context, event }) => ({
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 ...context.book!,
                 status: event.output.status,
               }),
@@ -105,11 +107,11 @@ export const workflow = createMachine(
       "Book Status Decision": {
         always: [
           {
-            guard: ({ context }) => context.book!.status === "onloan",
+            guard: ({ context }) => context.book?.status === "onloan",
             target: "Report Status To Lender",
           },
           {
-            guard: ({ context }) => context.book!.status === "available",
+            guard: ({ context }) => context.book?.status === "available",
             target: "Check Out Book",
           },
           {
@@ -121,8 +123,8 @@ export const workflow = createMachine(
         invoke: {
           src: "Send status to lender",
           input: ({ context }) => ({
-            bookid: context.book!.id,
-            message: `Book ${context.book!.title} is already on loan`,
+            bookid: context.book?.id,
+            message: `Book ${String(context.book?.title)} is already on loan`,
           }),
           onDone: {
             target: "Wait for Lender response",
@@ -143,7 +145,7 @@ export const workflow = createMachine(
         invoke: {
           src: "Request hold for lender",
           input: ({ context }) => ({
-            bookid: context.book!.id,
+            bookid: context.book?.id,
             lender: context.lender,
           }),
           onDone: {
@@ -155,7 +157,7 @@ export const workflow = createMachine(
         invoke: {
           src: "Cancel hold request for lender",
           input: ({ context }) => ({
-            bookid: context.book!.id,
+            bookid: context.book?.id,
             lender: context.lender,
           }),
           onDone: {
@@ -177,7 +179,7 @@ export const workflow = createMachine(
             invoke: {
               src: "Check out book with id",
               input: ({ context }) => ({
-                bookid: context.book!.id,
+                bookid: context.book?.id,
               }),
               onDone: {
                 target: "Notifying Lender",
@@ -188,7 +190,7 @@ export const workflow = createMachine(
             invoke: {
               src: "Notify Lender for checkout",
               input: ({ context }) => ({
-                bookid: context.book!.id,
+                bookid: context.book?.id,
                 lender: context.lender,
               }),
               onDone: {

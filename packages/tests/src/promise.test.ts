@@ -11,7 +11,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import { runMachine, eventually } from "./runner.js";
 
 import { setup } from "xstate";
@@ -75,7 +75,7 @@ describe("A fromPromise based state machine", () => {
       await eventually(async () => {
         const snapshot = await machine.snapshot();
         expect(snapshot).toBeDefined();
-        expect(snapshot!.status).toStrictEqual("done");
+        expect(snapshot?.status).toStrictEqual("done");
       });
     },
   );

@@ -82,11 +82,12 @@ export async function runMachine<SnapshotType>(
 }
 
 export const eventually = async (op: () => Promise<void> | void) => {
-  // eslint-disable-next-line no-constant-condition
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   while (true) {
     try {
       await op();
       return;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // suppress the error and retry
     }
