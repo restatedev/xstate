@@ -15,7 +15,8 @@
     "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
     "exports-check": "attw --pack .",
     "lint": "eslint",
-    "check-forgotten-exports": "api-extractor run --local"
+    "check-forgotten-exports": "api-extractor run --local",
+    "prepublishOnly": "pnpm -w verify"
   },
   "dependencies": {},
   "devDependencies": {

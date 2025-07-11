@@ -20,9 +20,7 @@
     "verify": "pnpm format-check && pnpm build && pnpm test && pnpm lint",
     "format": "prettier --write .",
     "format-check": "prettier --check .",
-    "changeset": "changeset",
-    "publish": "pnpm -r publish",
-    "prepublishOnly": "pnpm verify"
+    "changeset": "changeset"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
