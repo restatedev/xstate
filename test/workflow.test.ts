@@ -49,16 +49,16 @@ export const workflow = setup({
   },
   actors: {
     produceReport: fromPromise(
-      async ({
+      ({
         input,
       }: {
         input: {
           temperature: number | null;
           humidity: number | null;
         };
-      }) => {
+      }): Promise<void> => {
         global_report = input;
-        return;
+        return Promise.resolve();
       },
     ),
   },
@@ -135,7 +135,7 @@ describe("A Temperate workflow", () => {
 
       await delay(5_000);
 
-      await eventually(async () => {
+      await eventually(() => {
         expect(global_report).toStrictEqual({ temperature: 20, humidity: 50 });
       });
     },

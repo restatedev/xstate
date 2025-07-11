@@ -79,7 +79,8 @@ export async function runMachine<SnapshotType>(
   }
 }
 
-export const eventually = async (op: () => Promise<void>) => {
+export const eventually = async (op: () => Promise<void> | void) => {
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       await op();

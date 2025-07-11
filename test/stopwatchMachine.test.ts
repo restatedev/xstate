@@ -46,6 +46,7 @@ export const stopwatchMachine = setup({
       on: {
         TICK: {
           actions: assign({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             elapsed: ({ context }) => context.elapsed + 1,
           }),
         },
