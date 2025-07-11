@@ -65,49 +65,65 @@ export const workflow = createMachine(
       },
       BiddingEnded: {
         type: "final",
-        output: ({ context }) => ({
-          // highest bid
-          winningBid: context.bids.reduce((prev, current) =>
-            prev.amount > current.amount ? prev : current,
-          ),
-        }),
       },
     },
+    output: ({ context }) => ({
+      // highest bid
+      winningBid: context.bids.reduce((prev, current) =>
+        prev.amount > current.amount ? prev : current
+      ),
+    }),
   },
   {
     delays: {
       BiddingDelay: 3000,
     },
-  },
+  }
 );
 
 describe("A car auction bidding workflow", () => {
-  it(
-    "Will complete successfully",
-    { timeout: 20_000, skip: true, todo: true },
-    async () => {
-      const wf = xstate("workflow", workflow);
+  it("Will complete successfully", { timeout: 20_000 }, async () => {
+    const wf = xstate("workflow", workflow);
 
-      using actor = await runMachine<any>({
-        machine: wf,
-      });
+    using actor = await runMachine<any>({
+      machine: wf,
+    });
 
-      await actor.send({
-        type: "CarBidEvent",
-        bid: {
-          carid: "car123",
-          amount: 3000,
-          bidder: {
-            id: "xyz",
-            firstName: "John",
-            lastName: "Wayne",
-          },
+    await actor.send({
+      type: "CarBidEvent",
+      bid: {
+        carid: "car123",
+        amount: 3000,
+        bidder: {
+          id: "xyz",
+          firstName: "John",
+          lastName: "Wayne",
         },
-      });
+      },
+    });
 
-      await actor.send({
-        type: "CarBidEvent",
-        bid: {
+    await actor.send({
+      type: "CarBidEvent",
+      bid: {
+        carid: "car123",
+        amount: 4000,
+        bidder: {
+          id: "abc",
+          firstName: "Jane",
+          lastName: "Doe",
+        },
+      },
+    });
+
+    await eventually(async () => {
+      const snapshot = await actor.snapshot();
+      console.log(snapshot);
+      expect(snapshot?.status).toStrictEqual("done");
+      expect(snapshot?.value).toStrictEqual("BiddingEnded");
+
+      // TODO: figure out why output is not available in the snapshot
+      expect(snapshot?.output).toStrictEqual({
+        winningBid: {
           carid: "car123",
           amount: 4000,
           bidder: {
@@ -117,26 +133,6 @@ describe("A car auction bidding workflow", () => {
           },
         },
       });
-
-      await eventually(async () => {
-        const snapshot = await actor.snapshot();
-        console.log(snapshot);
-        expect(snapshot?.status).toStrictEqual("done");
-        expect(snapshot?.value).toStrictEqual("BiddingEnded");
-
-        // TODO: figure out why output is not available in the snapshot
-        expect(snapshot?.output).toStrictEqual({
-          winningBid: {
-            carid: "car123",
-            amount: 4000,
-            bidder: {
-              id: "abc",
-              firstName: "Jane",
-              lastName: "Doe",
-            },
-          },
-        });
-      });
-    },
-  );
+    });
+  });
 });
