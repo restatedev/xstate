@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /*
  * Copyright (c) 2023-2024 - Restate Software, Inc., Restate GmbH
  *
@@ -8,19 +10,12 @@
  * directory of this repository or package, or at
  * https://github.com/restatedev/sdk-typescript/blob/main/LICENSE
  */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable no-constant-condition */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { xstate, fromPromise } from "../src/public_api.js";
+import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
 import { eventually, runMachine } from "./runner.js";
 
-import { setup, assign } from "xstate";
+import { setup, assign, type SnapshotFrom } from "xstate";
 
 async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -79,6 +74,12 @@ export const workflow = setup({
   context: {
     patientInfo: null,
     appointmentInfo: null,
+  } as {
+    patientInfo: PatientInfo | null;
+    appointmentInfo: {
+      appointmentId: string;
+      appointmentDate: string;
+    } | null;
   },
   states: {
     Idle: {
@@ -112,7 +113,7 @@ describe("An event based workflow", () => {
   it("Will complete successfully", { timeout: 20_000 }, async () => {
     const wf = xstate("workflow", workflow);
 
-    using actor = await runMachine<any>({
+    using actor = await runMachine<SnapshotFrom<typeof workflow>>({
       machine: wf,
       input: {
         person: { name: "Jenny" },
@@ -132,7 +133,8 @@ describe("An event based workflow", () => {
       const snapshot = await actor.snapshot();
       console.log("Snapshot:", snapshot);
       expect(
-        snapshot?.context?.appointmentInfo?.appointmentInfo?.appointmentId,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        snapshot.context.appointmentInfo.appointmentInfo?.appointmentId,
       ).toStrictEqual("1234");
     });
   });
