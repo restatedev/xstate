@@ -26,5 +26,5 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 10.13.1
-      - run: pnpm ci
+      - run: pnpm install --frozen-lockfile
       - run: pnpm verify
