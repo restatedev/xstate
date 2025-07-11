@@ -11,7 +11,6 @@ export const machine = setup({
       amount: number;
     },
     input: {} as {
-      key: string; // the key the state machine was created against
       senderUserID: string;
       recipientUserID: string;
       amount: number;
@@ -34,11 +33,11 @@ export const machine = setup({
     ),
   },
 }).createMachine({
-  context: ({ input }) => ({
+  context: ({ input, self }) => ({
     senderUserID: input.senderUserID,
     recipientUserID: input.recipientUserID,
     amount: input.amount,
-    paymentID: input.key,
+    paymentID: self.id,
   }),
   id: "Payment",
   initial: "Awaiting approval",
