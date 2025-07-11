@@ -398,11 +398,7 @@ const actorObject = <
         ).start();
 
         const snapshot = root.getPersistedSnapshot();
-        //(snapshot as any).context.counts.ctx = undefined;
-        console.log("Created actor with snapshot:", snapshot);
-
         ctx.set("snapshot", snapshot);
-
         return snapshot;
       },
       send: async (

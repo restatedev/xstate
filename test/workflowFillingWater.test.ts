@@ -41,9 +41,8 @@ export const workflow = createMachine({
     };
   },
   initial: "CheckIfFull",
-  context: ({ input, self }) => ({
+  context: ({ input }) => ({
     counts: input,
-    x: self.id
   }),
   states: {
     CheckIfFull: {
