@@ -134,6 +134,7 @@ async function createSystem<T extends ActorSystemInfo>(
       ctx
         .objectSendClient(api, systemName, { delay })
         .send({ scheduledEvent, source, target, event });
+
       ctx.set("events", events);
     },
     cancel(source: AnyActorRef, id: string): void {
@@ -391,16 +392,18 @@ const actorObject = <
         const root = (
           await createActor(ctx, api, systemName, version, logic, {
             input: {
-              ctx,
-              key: ctx.key,
               ...(request?.input ?? {}),
             } as InputFrom<LatestStateMachine>,
           })
         ).start();
 
-        ctx.set("snapshot", root.getPersistedSnapshot());
+        const snapshot = root.getPersistedSnapshot();
+        //(snapshot as any).context.counts.ctx = undefined;
+        console.log("Created actor with snapshot:", snapshot);
 
-        return root.getPersistedSnapshot();
+        ctx.set("snapshot", snapshot);
+
+        return snapshot;
       },
       send: async (
         ctx: restate.ObjectContext<State>,
