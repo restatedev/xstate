@@ -19,7 +19,10 @@
     "examples": "pnpm --filter @restatedev/xstate-examples dev",
     "verify": "pnpm format-check && pnpm build && pnpm test && pnpm lint",
     "format": "prettier --write .",
-    "format-check": "prettier --check ."
+    "format-check": "prettier --check .",
+    "changeset": "changeset",
+    "publish": "pnpm -r publish",
+    "prepublishOnly": "pnpm verify"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
