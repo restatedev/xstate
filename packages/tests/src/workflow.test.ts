@@ -8,15 +8,17 @@
  * directory of this repository or package, or at
  * https://github.com/restatedev/sdk-typescript/blob/main/LICENSE
  */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable no-constant-condition */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
 import { eventually, runMachine } from "./runner.js";
 
 import { assign, setup } from "xstate";
+/**
+ * Need to make the type inference work for workflow
+ * https://github.com/statelyai/xstate/issues/5090#issuecomment-2493180191
+ */
+import "xstate/guards";
 
 const delay = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));

@@ -87,8 +87,7 @@ export const eventually = async (op: () => Promise<void> | void) => {
     try {
       await op();
       return;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
+    } catch (_e) {
       // suppress the error and retry
     }
     await new Promise<void>((resolve) => setTimeout(resolve, 250));

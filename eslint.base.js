@@ -13,7 +13,18 @@ export default defineConfig([
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
     languageOptions: { globals: globals.node },
   },
-  tseslint.configs.recommended,
+  tseslint.config(tseslint.configs.recommended, {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  }),
   globalIgnores([
     "dist/*",
     "node_modules/*",

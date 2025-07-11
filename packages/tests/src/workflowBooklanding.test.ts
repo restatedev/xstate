@@ -8,11 +8,6 @@
  * directory of this repository or package, or at
  * https://github.com/restatedev/sdk-typescript/blob/main/LICENSE
  */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable no-constant-condition */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
@@ -95,9 +90,11 @@ export const workflow = createMachine(
           onDone: {
             target: "Book Status Decision",
             actions: assign({
+              // TODO: Fix typing issue
               book: ({ context, event }) => ({
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 ...context.book!,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 status: event.output.status,
               }),
             }),
