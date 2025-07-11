@@ -1,0 +1,23 @@
+{
+  "name": "tests",
+  "description": "Restate + XState tests",
+  "license": "MIT",
+  "author": "Restate developers",
+  "email": "code@restate.dev",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
+    "test": "vitest run",
+    "dev": "pnpm -w test:watch --project=tests",
+    "build": "tsc -b",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@restatedev/restate-sdk": "^1.7.0",
+    "@restatedev/restate-sdk-clients": "^1.7.0",
+    "xstate": "^5.18.0",
+    "@restatedev/xstate": "workspace:*",
+    "@restatedev/restate-sdk-testcontainers": "^1.7.0"
+  }
+}

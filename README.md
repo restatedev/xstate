@@ -40,6 +40,7 @@ curl http://localhost:8080/auth/myMachine/send --json '{"event": {"type": "AUTH"
 ```
 
 ## Versioning
+
 Each state transition maps to a single invocation inside Restate. Restate always executes new invocation on the latest version of the code that has been registered.
 That means that if you update your code, in-progress XState state machines will use the new code on their next state transition. This means that state machine definition updates need
 to be compatible with the state of machines that exist in Restate.
@@ -74,6 +75,7 @@ curl http://localhost:8080/counter/newMachine/send --json '{"event": {"type": "i
 ```
 
 You can easily see what versions exist in your cluster using Restate's introspection API:
+
 ```bash
 restate sql "select service_key, value_utf8 from state where key = 'version'"
 ```
@@ -86,3 +88,7 @@ restate sql "with keys as
     (select service_key from state where key = 'snapshot' and json_get_str(value_utf8, 'status') != 'done')
     select state.service_key, state.value_utf8 from keys right join state where keys.service_key = state.service_key and key = 'version'"
 ```
+
+## 🛠 Contributing
+
+Please see the [Development Guide](./DEVELOPMENT.md) for setup instructions, testing, linting, and release workflow.

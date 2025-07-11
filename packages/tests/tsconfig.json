@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["node"],
+    "lib": ["es2022"]
+  },
+  "references": [{ "path": "../restate-xstate" }],
+  "include": ["src"]
+}

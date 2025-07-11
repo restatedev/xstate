@@ -1,0 +1,74 @@
+on:
+  push:
+    branches: [main]
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: Get package version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./packages/restate-xstate/package.json').version")
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: Check if tag exists
+        id: check_tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ steps.get_version.outputs.tag }}"
+          echo "Checking if tag $TAG_NAME exists..."
+          if gh release view "$TAG_NAME" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+    outputs:
+      need-to-release: ${{ steps.check_tag.outputs.exists == 'false' }}
+      version: ${{ steps.get_version.outputs.version }}
+  release:
+    runs-on: ubuntu-latest
+    name: Release
+    needs: check-version
+    permissions:
+      contents: write
+    if: ${{ needs.check-version.outputs.need-to-release == 'true' }}
+    steps:
+      - run: echo "need-to-release -- ${{ needs.check-version.outputs.need-to-release }}"
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - name: Configure npm authentication
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: pnpm install --frozen-lockfile
+      - name: Publish npm package
+        run: pnpm -r publish
+      - name: Create a release
+        id: create-release
+        uses: ncipollo/release-action@v1
+        with:
+          commit: ${{ github.sha }}
+          makeLatest: true
+          tag: v${{ needs.check-version.outputs.version }}
+          generateReleaseNotes: true

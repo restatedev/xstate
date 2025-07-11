@@ -5,7 +5,7 @@ src/generated/*
 buf.lock
 
 .idea
-
+tsconfig.tsbuildinfo
 
 packages/*/node_modules/*
 packages/*/dist/*
