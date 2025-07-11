@@ -1,6 +1,5 @@
 {
   "name": "examples",
-  "version": "0.2.0",
   "description": "Restate + XState examples",
   "license": "MIT",
   "author": "Restate developers",

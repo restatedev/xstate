@@ -1,6 +1,5 @@
 {
-  "name": "@restatedev/xstate",
-  "version": "0.2.0",
+  "name": "root",
   "description": "Run XState state machines on Restate",
   "license": "MIT",
   "type": "module",
