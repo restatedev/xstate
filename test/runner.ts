@@ -86,7 +86,7 @@ export const eventually = async (op: () => Promise<void> | void) => {
       await op();
       return;
     } catch (e) {
-      console.log("retrying %s", e);
+      // suppress the error and retry
     }
     await new Promise<void>((resolve) => setTimeout(resolve, 250));
   }

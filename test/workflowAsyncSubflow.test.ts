@@ -99,7 +99,6 @@ describe("An onboarding workflow", () => {
 
     await eventually(async () => {
       const snapshot = await actor.snapshot();
-      console.log(snapshot);
       expect(snapshot?.value).toStrictEqual("Onboarded");
     });
   });
