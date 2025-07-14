@@ -12,7 +12,7 @@
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { createRestateTestActor, eventually } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup } from "xstate";
 
@@ -74,11 +74,11 @@ describe("A fromPromise based state machine", () => {
         input: { customer: "bob@mop.com" },
       });
 
-      await eventually(async () => {
-        const snapshot = await machine.snapshot();
-        expect(snapshot).toBeDefined();
-        expect(snapshot?.status).toStrictEqual("done");
-      });
+      await expect
+        .poll(() => machine.snapshot(), { interval: 250, timeout: 20_000 })
+        .toMatchObject({
+          status: "done",
+        });
     },
   );
 });

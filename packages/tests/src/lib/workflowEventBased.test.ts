@@ -13,7 +13,7 @@
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup, assign, type SnapshotFrom } from "xstate";
 
@@ -129,13 +129,17 @@ describe("An event based workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      console.log("Snapshot:", snapshot);
-      expect(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        snapshot.context.appointmentInfo.appointmentInfo?.appointmentId,
-      ).toStrictEqual("1234");
-    });
+    await expect
+      .poll(
+        async () =>
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          (await actor.snapshot()).context.appointmentInfo.appointmentInfo
+            ?.appointmentId,
+        {
+          interval: 250,
+          timeout: 20_000,
+        },
+      )
+      .toStrictEqual("1234");
   });
 });

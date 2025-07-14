@@ -11,7 +11,7 @@
 
 import { xstate } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { assign, setup, fromCallback } from "xstate";
 
@@ -80,10 +80,12 @@ describe("A stopwatch machine", () => {
 
       await actor.send({ type: "start" });
 
-      await eventually(async () => {
-        const snapshot = await actor.snapshot();
-        expect(snapshot?.context?.elapsed).toBeGreaterThan(0);
-      });
+      await expect
+        .poll(async () => (await actor.snapshot())?.context?.elapsed, {
+          interval: 250,
+          timeout: 20_000,
+        })
+        .toBeGreaterThan(0);
     },
   );
 });

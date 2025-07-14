@@ -11,7 +11,7 @@
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { assign, setup } from "xstate";
 /**
@@ -139,9 +139,15 @@ describe("A Temperate workflow", () => {
 
       await delay(5_000);
 
-      await eventually(() => {
-        expect(global_report).toStrictEqual({ temperature: 20, humidity: 50 });
-      });
+      await expect
+        .poll(() => global_report, {
+          interval: 250,
+          timeout: 30_000,
+        })
+        .toMatchObject({
+          temperature: 20,
+          humidity: 50,
+        });
     },
   );
 });

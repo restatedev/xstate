@@ -11,7 +11,7 @@
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { createMachine, assign } from "xstate";
 
@@ -297,9 +297,13 @@ describe("An book landing workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      expect(snapshot?.value).toStrictEqual({ "Check Out Book": "End" });
-    });
+    await expect
+      .poll(() => actor.snapshot(), {
+        interval: 250,
+        timeout: 20_000,
+      })
+      .toMatchObject({
+        value: { "Check Out Book": "End" },
+      });
   });
 });

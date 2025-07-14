@@ -12,7 +12,7 @@
 import { xstate } from "@restatedev/xstate";
 import { createMachine, assign } from "xstate";
 import { describe, it, expect } from "vitest";
-import { createRestateTestActor } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 const countMachine = createMachine({
   id: "counterv1",

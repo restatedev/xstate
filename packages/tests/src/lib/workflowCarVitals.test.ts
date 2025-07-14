@@ -12,7 +12,7 @@
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { createMachine, assign, type SnapshotFrom } from "xstate";
 
@@ -146,14 +146,18 @@ describe("A car vitals workflow", () => {
       type: "CarTurnedOffEvent",
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      expect(snapshot.output).toStrictEqual({
-        tirePressure: { value: 100 },
-        oilPressure: { value: 100 },
-        coolantLevel: { value: 100 },
-        battery: { value: 100 },
+    await expect
+      .poll(() => actor.snapshot(), {
+        interval: 250,
+        timeout: 20_000,
+      })
+      .toMatchObject({
+        output: {
+          tirePressure: { value: 100 },
+          oilPressure: { value: 100 },
+          coolantLevel: { value: 100 },
+          battery: { value: 100 },
+        },
       });
-    });
   });
 });

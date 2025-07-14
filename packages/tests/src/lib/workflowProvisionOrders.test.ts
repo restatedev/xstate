@@ -11,7 +11,7 @@
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup, type SnapshotFrom } from "xstate";
 
@@ -162,10 +162,14 @@ describe("Provision order workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      expect(snapshot.status).toStrictEqual("error");
-      expect(snapshot.value).toStrictEqual("ProvisionOrder");
-    });
+    await expect
+      .poll(() => actor.snapshot(), {
+        interval: 250,
+        timeout: 20_000,
+      })
+      .toMatchObject({
+        status: "error",
+        value: "ProvisionOrder",
+      });
   });
 });

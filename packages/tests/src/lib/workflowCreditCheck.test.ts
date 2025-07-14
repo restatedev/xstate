@@ -11,7 +11,7 @@
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup, assign, type SnapshotFrom } from "xstate";
 
@@ -171,12 +171,13 @@ describe("A credit check  workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      console.log("Snapshot:", snapshot);
-      expect((snapshot.output as { decision: string }).decision).toStrictEqual(
-        "Approved",
-      );
-    });
+    await expect
+      .poll(() => actor.snapshot(), {
+        interval: 250,
+        timeout: 20_000,
+      })
+      .toMatchObject({
+        decision: "Approved",
+      });
   });
 });

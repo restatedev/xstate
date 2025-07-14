@@ -11,7 +11,7 @@
 
 import { xstate } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { createMachine, assign, type SnapshotFrom } from "xstate";
 
@@ -80,10 +80,14 @@ describe("Fill water workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      expect(snapshot.status).toStrictEqual("done");
-      expect(snapshot.value).toStrictEqual("GlassFull");
-    });
+    await expect
+      .poll(() => actor.snapshot(), {
+        interval: 250,
+        timeout: 20_000,
+      })
+      .toMatchObject({
+        status: "done",
+        value: "GlassFull",
+      });
   });
 });
