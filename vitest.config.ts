@@ -21,10 +21,14 @@ export default defineConfig(() => {
             __dirname,
             "./packages/restate-xstate/src/index.ts",
           ),
+          "@restatedev/xstate-test": path.resolve(
+            __dirname,
+            "./packages/restate-xstate-test/src/index.ts",
+          ),
         },
       },
       optimizeDeps: {
-        exclude: ["@restatedev/xstate"],
+        exclude: ["@restatedev/xstate", "@restatedev/xstate-test"],
       },
     }),
   };

@@ -98,6 +98,24 @@ importers:
         specifier: ^1.7.0
         version: 1.7.3
 
+  packages/restate-xstate-test:
+    dependencies:
+      '@restatedev/restate-sdk':
+        specifier: ^1.7.0
+        version: 1.7.3
+      '@restatedev/restate-sdk-clients':
+        specifier: ^1.7.0
+        version: 1.7.3
+      '@restatedev/restate-sdk-testcontainers':
+        specifier: ^1.7.0
+        version: 1.7.3
+      '@restatedev/xstate':
+        specifier: workspace:*
+        version: link:../restate-xstate
+      xstate:
+        specifier: ^5.18.0
+        version: 5.20.1
+
   packages/tests:
     dependencies:
       '@restatedev/restate-sdk':
@@ -112,6 +130,9 @@ importers:
       '@restatedev/xstate':
         specifier: workspace:*
         version: link:../restate-xstate
+      '@restatedev/xstate-test':
+        specifier: workspace:*
+        version: link:../restate-xstate-test
       xstate:
         specifier: ^5.18.0
         version: 5.20.1
