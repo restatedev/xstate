@@ -20,13 +20,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@restatedev/restate-sdk": "^1.7.0",
-    "@restatedev/restate-sdk-clients": "^1.7.0",
-    "xstate": "^5.18.0",
-    "@restatedev/xstate": "workspace:*",
-    "@restatedev/restate-sdk-testcontainers": "^1.7.0"
-  },
   "peerDependencies": {
     "@restatedev/restate-sdk": "^1.7.0",
     "@restatedev/restate-sdk-testcontainers": "^1.7.0",
