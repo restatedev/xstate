@@ -1,0 +1,6 @@
+{
+  "extends": "../../api-extractor.base.json",
+  "projectFolder": ".",
+  "mainEntryPointFilePath": "<projectFolder>/dist/index.d.ts",
+  "bundledPackages": ["@restatedev/xstate-test"]
+}
