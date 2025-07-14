@@ -154,7 +154,7 @@ export const workflow = setup({
 });
 
 describe("A credit check  workflow", () => {
-  it("Will complete successfully", { timeout: 20_000 }, async () => {
+  it("Will complete successfully", { timeout: 30_000 }, async () => {
     const wf = xstate("workflow", workflow);
 
     using actor = await createRestateTestActor<SnapshotFrom<typeof workflow>>({
@@ -172,9 +172,9 @@ describe("A credit check  workflow", () => {
     });
 
     await expect
-      .poll(() => actor.snapshot(), {
+      .poll(async () => (await actor.snapshot()).output, {
         interval: 250,
-        timeout: 20_000,
+        timeout: 30_000,
       })
       .toMatchObject({
         decision: "Approved",

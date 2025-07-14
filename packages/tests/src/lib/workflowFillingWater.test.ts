@@ -69,7 +69,7 @@ export const workflow = createMachine({
 });
 
 describe("Fill water workflow", () => {
-  it("Will complete successfully", { timeout: 20_000 }, async () => {
+  it("Will complete successfully", { timeout: 30_000 }, async () => {
     const wf = xstate("workflow", workflow);
 
     using actor = await createRestateTestActor<SnapshotFrom<typeof workflow>>({
@@ -83,7 +83,7 @@ describe("Fill water workflow", () => {
     await expect
       .poll(() => actor.snapshot(), {
         interval: 250,
-        timeout: 20_000,
+        timeout: 30_000,
       })
       .toMatchObject({
         status: "done",

@@ -10,7 +10,7 @@
     "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
     "build": "tsc -b",
     "test": "vitest run",
-    "dev": "pnpm -w test:watch --project=@restatedev/xstate-test",
+    "dev": "pnpm -w test:watch --project=tests",
     "lint": "eslint"
   },
   "dependencies": {
