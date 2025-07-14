@@ -8,19 +8,12 @@
  * directory of this repository or package, or at
  * https://github.com/restatedev/sdk-typescript/blob/main/LICENSE
  */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable no-constant-condition */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
 import { eventually, runMachine } from "./runner.js";
 
-import { setup } from "xstate";
+import { setup, type SnapshotFrom } from "xstate";
 
 // https://github.com/serverlessworkflow/specification/tree/main/examples#parallel-execution-example
 export const workflow = setup({
@@ -90,14 +83,14 @@ describe("Parallel workflow", () => {
   it("Will complete successfully", { timeout: 20_000 }, async () => {
     const wf = xstate("workflow", workflow);
 
-    using actor = await runMachine<any>({
+    using actor = await runMachine<SnapshotFrom<typeof workflow>>({
       machine: wf,
     });
 
     await eventually(async () => {
       const snapshot = await actor.snapshot();
-      expect(snapshot?.status).toStrictEqual("done");
-      expect(snapshot?.value).toStrictEqual("Success");
+      expect(snapshot.status).toStrictEqual("done");
+      expect(snapshot.value).toStrictEqual("Success");
     });
   });
 });
