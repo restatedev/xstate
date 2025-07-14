@@ -15,7 +15,7 @@
     "test": "pnpm build && vitest run",
     "test:watch": "vitest watch",
     "lint": "pnpm -r lint",
-    "examples": "pnpm --filter @restatedev/xstate-examples dev",
+    "examples": "pnpm --filter examples dev",
     "verify": "pnpm format-check && pnpm build && pnpm test && pnpm lint",
     "format": "prettier --write .",
     "format-check": "prettier --check .",
