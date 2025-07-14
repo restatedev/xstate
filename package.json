@@ -11,7 +11,7 @@
     "clean": "pnpm -r clean",
     "prebuild": "pnpm clean",
     "build": "pnpm -r build",
-    "dev": "FORCE_COLOR=1 pnpm -r dev",
+    "dev": "FORCE_COLOR=1 pnpm -r --parallel --stream dev",
     "test": "pnpm build && vitest run",
     "test:watch": "vitest watch",
     "lint": "pnpm -r lint",
