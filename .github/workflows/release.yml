@@ -59,16 +59,12 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 10.13.1
-      - name: Configure npm authentication
-        run: |
-          echo "@restatedev:registry=https://registry.npmjs.org/" >> ~/.npmrc
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
       - name: Publish npm package
         run: pnpm -r publish --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create a release
         id: create-release
         uses: ncipollo/release-action@v1
