@@ -8,19 +8,12 @@
  * directory of this repository or package, or at
  * https://github.com/restatedev/sdk-typescript/blob/main/LICENSE
  */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable no-constant-condition */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { xstate, fromPromise } from "../src/public_api.js";
+import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
 import { eventually, runMachine } from "./runner.js";
 
-import { assign, createMachine, forwardTo, sendParent, setup } from "xstate";
+import { assign, sendParent, setup, type SnapshotFrom } from "xstate";
 
 async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -128,8 +121,8 @@ export const workflow = setup({
       invoke: {
         src: "checkfunds",
         input: ({ context }) => ({
-          account: context.accountId!,
-          paymentamount: context.payment!.amount,
+          account: String(context.accountId),
+          paymentamount: Number(context.payment?.amount),
         }),
         onDone: {
           actions: assign({
@@ -182,35 +175,11 @@ export const workflow = setup({
   },
 });
 
-const parentWorkflow = createMachine({
-  id: "parent",
-  types: {} as {
-    events: PaymentReceivedEvent;
-  },
-  invoke: {
-    id: "paymentconfirmation",
-    src: workflow,
-    onSnapshot: {
-      actions: ({ event }) => {
-        console.log(event.snapshot);
-      },
-    },
-  },
-  on: {
-    PaymentReceivedEvent: { actions: forwardTo("paymentconfirmation") },
-    "*": {
-      actions: ({ event }) => {
-        console.log("Received event", event);
-      },
-    },
-  },
-});
-
 describe("Reusing functions workflow", () => {
   it("Will complete successfully", { timeout: 20_000 }, async () => {
     const wf = xstate("workflow", workflow);
 
-    using actor = await runMachine<any>({
+    using actor = await runMachine<SnapshotFrom<typeof workflow>>({
       machine: wf,
     });
 
@@ -230,8 +199,8 @@ describe("Reusing functions workflow", () => {
 
     await eventually(async () => {
       const snapshot = await actor.snapshot();
-      expect(snapshot?.status).toStrictEqual("done");
-      expect(snapshot?.value).toStrictEqual("End");
+      expect(snapshot.status).toStrictEqual("done");
+      expect(snapshot.value).toStrictEqual("End");
     });
   });
 });
