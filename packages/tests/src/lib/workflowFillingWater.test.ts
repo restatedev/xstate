@@ -10,10 +10,11 @@
  */
 
 import { xstate } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { createMachine, assign, type SnapshotFrom } from "xstate";
+import { eventually } from "./eventually.js";
 
 // https://github.com/serverlessworkflow/specification/blob/main/examples/README.md#filling-a-glass-of-water
 export const workflow = createMachine({
@@ -80,14 +81,9 @@ describe("Fill water workflow", () => {
       },
     });
 
-    await expect
-      .poll(() => actor.snapshot(), {
-        interval: 250,
-        timeout: 30_000,
-      })
-      .toMatchObject({
-        status: "done",
-        value: "GlassFull",
-      });
+    await eventually(() => actor.snapshot()).toMatchObject({
+      status: "done",
+      value: "GlassFull",
+    });
   });
 });

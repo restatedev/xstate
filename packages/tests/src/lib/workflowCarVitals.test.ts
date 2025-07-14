@@ -11,10 +11,11 @@
  */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { createMachine, assign, type SnapshotFrom } from "xstate";
+import { eventually } from "./eventually.js";
 
 async function delay(ms: number, errorProbability: number = 0): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -146,18 +147,13 @@ describe("A car vitals workflow", () => {
       type: "CarTurnedOffEvent",
     });
 
-    await expect
-      .poll(() => actor.snapshot(), {
-        interval: 250,
-        timeout: 20_000,
-      })
-      .toMatchObject({
-        output: {
-          tirePressure: { value: 100 },
-          oilPressure: { value: 100 },
-          coolantLevel: { value: 100 },
-          battery: { value: 100 },
-        },
-      });
+    await eventually(() => actor.snapshot()).toMatchObject({
+      output: {
+        tirePressure: { value: 100 },
+        oilPressure: { value: 100 },
+        coolantLevel: { value: 100 },
+        battery: { value: 100 },
+      },
+    });
   });
 });

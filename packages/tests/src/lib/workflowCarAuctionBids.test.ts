@@ -10,10 +10,11 @@
  */
 
 import { xstate } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { createMachine, assign, type SnapshotFrom } from "xstate";
+import { eventually } from "./eventually.js";
 
 interface Bid {
   carid: string;
@@ -108,26 +109,21 @@ describe("A car auction bidding workflow", () => {
       },
     });
 
-    await expect
-      .poll(() => actor.snapshot(), {
-        interval: 250,
-        timeout: 20_000,
-      })
-      .toMatchObject({
-        status: "done",
-        value: "BiddingEnded",
-        // TODO: figure out why output is not available in the snapshot
-        output: {
-          winningBid: {
-            carid: "car123",
-            amount: 4000,
-            bidder: {
-              id: "abc",
-              firstName: "Jane",
-              lastName: "Doe",
-            },
+    await eventually(() => actor.snapshot()).toMatchObject({
+      status: "done",
+      value: "BiddingEnded",
+      // TODO: figure out why output is not available in the snapshot
+      output: {
+        winningBid: {
+          carid: "car123",
+          amount: 4000,
+          bidder: {
+            id: "abc",
+            firstName: "Jane",
+            lastName: "Doe",
           },
         },
-      });
+      },
+    });
   });
 });

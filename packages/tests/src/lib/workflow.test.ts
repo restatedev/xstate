@@ -10,7 +10,7 @@
  */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { assign, setup } from "xstate";
@@ -19,6 +19,7 @@ import { assign, setup } from "xstate";
  * https://github.com/statelyai/xstate/issues/5090#issuecomment-2493180191
  */
 import "xstate/guards";
+import { eventually } from "./eventually.js";
 
 const delay = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -139,15 +140,10 @@ describe("A Temperate workflow", () => {
 
       await delay(5_000);
 
-      await expect
-        .poll(() => global_report, {
-          interval: 250,
-          timeout: 30_000,
-        })
-        .toMatchObject({
-          temperature: 20,
-          humidity: 50,
-        });
+      await eventually(() => global_report).toMatchObject({
+        temperature: 20,
+        humidity: 50,
+      });
     },
   );
 });

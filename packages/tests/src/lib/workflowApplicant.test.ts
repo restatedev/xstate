@@ -10,10 +10,11 @@
  */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup } from "xstate";
+import { eventually } from "./eventually.js";
 
 interface Applicant {
   fname: string;
@@ -119,14 +120,9 @@ describe("An applicant workflow", () => {
         type: "Submit",
       });
 
-      await expect
-        .poll(() => actor.snapshot(), {
-          interval: 250,
-          timeout: 30_000,
-        })
-        .toMatchObject({
-          value: "End",
-        });
+      await eventually(() => actor.snapshot()).toMatchObject({
+        value: "End",
+      });
     },
   );
 });

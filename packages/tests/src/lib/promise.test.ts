@@ -11,10 +11,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup } from "xstate";
+import { eventually } from "./eventually.js";
 
 // from: https://raw.githubusercontent.com/statelyai/xstate/refs/heads/main/examples/workflow-async-function/main.ts
 
@@ -74,11 +75,9 @@ describe("A fromPromise based state machine", () => {
         input: { customer: "bob@mop.com" },
       });
 
-      await expect
-        .poll(() => machine.snapshot(), { interval: 250, timeout: 20_000 })
-        .toMatchObject({
-          status: "done",
-        });
+      await eventually(() => machine.snapshot()).toMatchObject({
+        status: "done",
+      });
     },
   );
 });

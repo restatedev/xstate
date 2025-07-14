@@ -10,10 +10,11 @@
  */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup, assign, type SnapshotFrom } from "xstate";
+import { eventually } from "./eventually.js";
 
 interface Customer {
   id: string;
@@ -171,13 +172,10 @@ describe("A credit check  workflow", () => {
       },
     });
 
-    await expect
-      .poll(async () => (await actor.snapshot()).output, {
-        interval: 250,
-        timeout: 30_000,
-      })
-      .toMatchObject({
+    await eventually(async () => (await actor.snapshot()).output).toMatchObject(
+      {
         decision: "Approved",
-      });
+      },
+    );
   });
 });

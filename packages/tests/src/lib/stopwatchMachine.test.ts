@@ -10,10 +10,11 @@
  */
 
 import { xstate } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { assign, setup, fromCallback } from "xstate";
+import { eventually } from "./eventually.js";
 
 export const stopwatchMachine = setup({
   actors: {
@@ -80,12 +81,9 @@ describe("A stopwatch machine", () => {
 
       await actor.send({ type: "start" });
 
-      await expect
-        .poll(async () => (await actor.snapshot())?.context?.elapsed, {
-          interval: 250,
-          timeout: 20_000,
-        })
-        .toBeGreaterThan(0);
+      await eventually(
+        async () => (await actor.snapshot())?.context?.elapsed,
+      ).toBeGreaterThan(0);
     },
   );
 });
