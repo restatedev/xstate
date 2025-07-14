@@ -61,6 +61,12 @@ jobs:
           version: 10.13.1
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
+      - name: Set up npm authentication
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          echo "@restatedev:registry=https://registry.npmjs.org/" >> ~/.npmrc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish npm package
         run: pnpm -r publish --ignore-scripts --access public
         env:
