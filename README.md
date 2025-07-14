@@ -1,6 +1,6 @@
 ## 🚀 Getting Started
 
-For details on integrating XState with Restate, check out the [Usage Guide](./packages/restate-xstate/README.md.md).
+For details on integrating XState with Restate, check out the [Usage Guide](./packages/restate-xstate/README.md).
 
 ## 🛠 Contributing
 
