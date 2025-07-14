@@ -62,8 +62,9 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: pnpm install --frozen-lockfile
+      - run: pnpm verify
       - name: Publish npm package
-        run: pnpm -r publish
+        run: pnpm -r publish --ignore-scripts
       - name: Create a release
         id: create-release
         uses: ncipollo/release-action@v1

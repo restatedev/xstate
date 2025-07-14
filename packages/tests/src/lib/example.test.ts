@@ -12,7 +12,7 @@
 import { xstate } from "@restatedev/xstate";
 import { createMachine, assign } from "xstate";
 import { describe, it, expect } from "vitest";
-import { runMachine } from "./runner.js";
+import { createRestateTestActor } from "./runner.js";
 
 const countMachine = createMachine({
   id: "counterv1",
@@ -40,7 +40,9 @@ describe("Simple count machine", () => {
     async () => {
       const counter = xstate("counter", countMachine);
 
-      using machine = await runMachine<{ context: { count: number } }>({
+      using machine = await createRestateTestActor<{
+        context: { count: number };
+      }>({
         machine: counter,
       });
 

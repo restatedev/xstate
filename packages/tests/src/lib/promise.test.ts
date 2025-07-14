@@ -12,7 +12,7 @@
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { runMachine, eventually } from "./runner.js";
+import { createRestateTestActor, eventually } from "./runner.js";
 
 import { setup } from "xstate";
 
@@ -67,7 +67,9 @@ describe("A fromPromise based state machine", () => {
     async () => {
       const wf = xstate("workflow", workflow);
 
-      using machine = await runMachine<{ status?: string } | undefined>({
+      using machine = await createRestateTestActor<
+        { status?: string } | undefined
+      >({
         machine: wf,
         input: { customer: "bob@mop.com" },
       });
