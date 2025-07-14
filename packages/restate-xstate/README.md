@@ -15,7 +15,7 @@ avoid blocking the event loop.
 The service is set up and managed automatically by interpreting the state
 machine definition, and can be deployed as a Lambda or as a long-lived service.
 
-In [`examples/auth/app.ts`](./examples/auth/app.ts) you will see an example of an XState machine
+In [`examples/auth/app.ts`](../examples/src/auth/app.ts) you will see an example of an XState machine
 that uses cross-machine communication, delays, and Promise actors, all running in Restate.
 Most XState machines should work out of the box, but this is still experimental, so
 we haven't tested everything yet!
@@ -51,7 +51,7 @@ In this situation you can use the `versions` field of the options argument to th
 New state machines - ie, those created deliberately with `create` or implicitly when `send` operates on a machine with no state saved, will always use the latest code version.
 However, in-flight machines will run against the version they started on.
 
-In [`examples/versioning/app.ts`](./examples/versioning/app.ts) there is an example of a machine that is versioned in this way. To try out this example:
+In [`examples/versioning/app.ts`](../examples/src/versioning/app.ts) there is an example of a machine that is versioned in this way. To try out this example:
 
 ```bash
 # start a local Restate instance
