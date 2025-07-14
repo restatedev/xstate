@@ -65,6 +65,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.0.12)(jiti@2.4.2)(tsx@4.20.3)(yaml@2.8.0)
+      xstate:
+        specifier: ^5.18.0
+        version: 5.20.1
 
   packages/examples:
     dependencies:
@@ -110,7 +113,7 @@ importers:
         specifier: ^1.7.0
         version: 1.7.3
       '@restatedev/xstate':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../restate-xstate
       xstate:
         specifier: ^5.18.0
