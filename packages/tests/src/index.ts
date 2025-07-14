@@ -1,4 +1,4 @@
-export { runMachine } from "./lib/runner.js";
+export { createRestateTestActor } from "./lib/runner.js";
 export type {
   RunMachineOptions,
   RunningMachine,

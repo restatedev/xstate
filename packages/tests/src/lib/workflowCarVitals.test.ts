@@ -12,7 +12,7 @@
 
 import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, runMachine } from "./runner.js";
+import { eventually, createRestateTestActor } from "./runner.js";
 
 import { createMachine, assign, type SnapshotFrom } from "xstate";
 
@@ -132,7 +132,9 @@ describe("A car vitals workflow", () => {
   it("Will complete successfully", { timeout: 20_000 }, async () => {
     const wf = xstate("workflow", vitalsWorkflow);
 
-    using actor = await runMachine<SnapshotFrom<typeof vitalsWorkflow>>({
+    using actor = await createRestateTestActor<
+      SnapshotFrom<typeof vitalsWorkflow>
+    >({
       machine: wf,
     });
 

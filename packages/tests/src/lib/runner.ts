@@ -37,7 +37,7 @@ export type RunningMachine<SnapshotType> = {
   [Symbol.dispose](): void;
 };
 
-export async function runMachine<SnapshotType>(
+export async function createRestateTestActor<SnapshotType>(
   opts: RunMachineOptions,
 ): Promise<RunningMachine<SnapshotType>> {
   const env = await RestateTestEnvironment.start(

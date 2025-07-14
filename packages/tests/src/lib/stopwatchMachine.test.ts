@@ -11,7 +11,7 @@
 
 import { xstate } from "@restatedev/xstate";
 import { describe, it, expect } from "vitest";
-import { eventually, runMachine } from "./runner.js";
+import { eventually, createRestateTestActor } from "./runner.js";
 
 import { assign, setup, fromCallback } from "xstate";
 
@@ -72,7 +72,7 @@ describe("A stopwatch machine", () => {
     async () => {
       const wf = xstate("workflow", stopwatchMachine);
 
-      using actor = await runMachine<
+      using actor = await createRestateTestActor<
         { context?: { elapsed?: number } } | undefined
       >({
         machine: wf,
