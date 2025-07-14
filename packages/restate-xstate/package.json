@@ -18,6 +18,9 @@
     "check-forgotten-exports": "api-extractor run --local",
     "prepublishOnly": "pnpm -w verify"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {},
   "devDependencies": {
     "@restatedev/restate-sdk-testcontainers": "^1.7.0",
