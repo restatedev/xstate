@@ -7,9 +7,6 @@
     "types": ["node"],
     "lib": ["es2022"]
   },
-  "references": [
-    { "path": "../restate-xstate" },
-    { "path": "../restate-xstate-test" }
-  ],
+  "references": [{ "path": "../restate-xstate" }],
   "include": ["src"]
 }

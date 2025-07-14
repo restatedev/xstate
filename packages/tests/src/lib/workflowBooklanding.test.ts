@@ -10,10 +10,11 @@
  */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { describe, it } from "vitest";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { createMachine, assign } from "xstate";
+import { eventually } from "./eventually.js";
 
 async function delay(ms: number, errorProbability: number = 0): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -297,9 +298,8 @@ describe("An book landing workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      expect(snapshot?.value).toStrictEqual({ "Check Out Book": "End" });
+    await eventually(() => actor.snapshot()).toMatchObject({
+      value: { "Check Out Book": "End" },
     });
   });
 });

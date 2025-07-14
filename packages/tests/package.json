@@ -1,45 +1,24 @@
 {
-  "name": "@restatedev/xstate-test",
-  "version": "0.2.0",
-  "description": "Utility for testing xstate with Restate",
+  "name": "tests",
+  "description": "Xstate + Restate tests",
   "license": "MIT",
   "author": "Restate developers",
   "email": "code@restate.dev",
   "type": "module",
+  "private": true,
   "scripts": {
     "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
-    "prebuild": "tsc --noEmit",
-    "build": "tsdown",
-    "postbuild": "pnpm exports-check && pnpm check-forgotten-exports",
+    "build": "tsc -b",
     "test": "vitest run",
-    "dev": "pnpm -w test:watch --project=@restatedev/xstate-test",
-    "lint": "eslint",
-    "exports-check": "attw --pack .",
-    "check-forgotten-exports": "api-extractor run --local",
-    "prepublishOnly": "pnpm -w verify"
+    "dev": "pnpm -w test:watch --project=tests",
+    "lint": "eslint"
   },
   "dependencies": {
     "@restatedev/restate-sdk": "^1.7.0",
     "@restatedev/restate-sdk-clients": "^1.7.0",
     "xstate": "^5.18.0",
     "@restatedev/xstate": "workspace:*",
+    "@restatedev/xstate-test": "workspace:*",
     "@restatedev/restate-sdk-testcontainers": "^1.7.0"
-  },
-  "peerDependencies": {
-    "@restatedev/restate-sdk": "^1.7.0",
-    "@restatedev/restate-sdk-testcontainers": "^1.7.0",
-    "@restatedev/restate-sdk-clients": "^1.7.0",
-    "@restatedev/xstate": "workspace:^",
-    "xstate": "^5.18.0"
-  },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.cts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./package.json": "./package.json"
   }
 }

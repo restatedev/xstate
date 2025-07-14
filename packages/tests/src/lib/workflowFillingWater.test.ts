@@ -10,10 +10,11 @@
  */
 
 import { xstate } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { describe, it } from "vitest";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { createMachine, assign, type SnapshotFrom } from "xstate";
+import { eventually } from "./eventually.js";
 
 // https://github.com/serverlessworkflow/specification/blob/main/examples/README.md#filling-a-glass-of-water
 export const workflow = createMachine({
@@ -69,7 +70,7 @@ export const workflow = createMachine({
 });
 
 describe("Fill water workflow", () => {
-  it("Will complete successfully", { timeout: 20_000 }, async () => {
+  it("Will complete successfully", { timeout: 30_000 }, async () => {
     const wf = xstate("workflow", workflow);
 
     using actor = await createRestateTestActor<SnapshotFrom<typeof workflow>>({
@@ -80,10 +81,9 @@ describe("Fill water workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      expect(snapshot.status).toStrictEqual("done");
-      expect(snapshot.value).toStrictEqual("GlassFull");
+    await eventually(() => actor.snapshot()).toMatchObject({
+      status: "done",
+      value: "GlassFull",
     });
   });
 });

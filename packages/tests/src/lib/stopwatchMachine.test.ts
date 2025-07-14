@@ -10,10 +10,11 @@
  */
 
 import { xstate } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { describe, it } from "vitest";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { assign, setup, fromCallback } from "xstate";
+import { eventually } from "./eventually.js";
 
 export const stopwatchMachine = setup({
   actors: {
@@ -80,10 +81,9 @@ describe("A stopwatch machine", () => {
 
       await actor.send({ type: "start" });
 
-      await eventually(async () => {
-        const snapshot = await actor.snapshot();
-        expect(snapshot?.context?.elapsed).toBeGreaterThan(0);
-      });
+      await eventually(
+        async () => (await actor.snapshot())?.context?.elapsed,
+      ).toBeGreaterThan(0);
     },
   );
 });

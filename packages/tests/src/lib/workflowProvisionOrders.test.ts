@@ -10,10 +10,11 @@
  */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { describe, it } from "vitest";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup, type SnapshotFrom } from "xstate";
+import { eventually } from "./eventually.js";
 
 interface Order {
   id: string;
@@ -162,10 +163,9 @@ describe("Provision order workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      expect(snapshot.status).toStrictEqual("error");
-      expect(snapshot.value).toStrictEqual("ProvisionOrder");
+    await eventually(() => actor.snapshot()).toMatchObject({
+      status: "error",
+      value: "ProvisionOrder",
     });
   });
 });

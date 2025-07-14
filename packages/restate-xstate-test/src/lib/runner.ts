@@ -80,16 +80,3 @@ export async function createRestateTestActor<SnapshotType>(
     throw error;
   }
 }
-
-export const eventually = async (op: () => Promise<void> | void) => {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  while (true) {
-    try {
-      await op();
-      return;
-    } catch (_e) {
-      // suppress the error and retry
-    }
-    await new Promise<void>((resolve) => setTimeout(resolve, 250));
-  }
-};

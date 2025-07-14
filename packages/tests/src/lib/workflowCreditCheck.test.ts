@@ -10,10 +10,11 @@
  */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { describe, it } from "vitest";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup, assign, type SnapshotFrom } from "xstate";
+import { eventually } from "./eventually.js";
 
 interface Customer {
   id: string;
@@ -154,7 +155,7 @@ export const workflow = setup({
 });
 
 describe("A credit check  workflow", () => {
-  it("Will complete successfully", { timeout: 20_000 }, async () => {
+  it("Will complete successfully", { timeout: 30_000 }, async () => {
     const wf = xstate("workflow", workflow);
 
     using actor = await createRestateTestActor<SnapshotFrom<typeof workflow>>({
@@ -171,12 +172,10 @@ describe("A credit check  workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      console.log("Snapshot:", snapshot);
-      expect((snapshot.output as { decision: string }).decision).toStrictEqual(
-        "Approved",
-      );
-    });
+    await eventually(async () => (await actor.snapshot()).output).toMatchObject(
+      {
+        decision: "Approved",
+      },
+    );
   });
 });

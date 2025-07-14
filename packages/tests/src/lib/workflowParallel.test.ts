@@ -10,10 +10,11 @@
  */
 
 import { xstate, fromPromise } from "@restatedev/xstate";
-import { describe, it, expect } from "vitest";
-import { eventually, createRestateTestActor } from "./runner.js";
+import { describe, it } from "vitest";
+import { createRestateTestActor } from "@restatedev/xstate-test";
 
 import { setup, type SnapshotFrom } from "xstate";
+import { eventually } from "./eventually.js";
 
 // https://github.com/serverlessworkflow/specification/tree/main/examples#parallel-execution-example
 export const workflow = setup({
@@ -87,10 +88,9 @@ describe("Parallel workflow", () => {
       machine: wf,
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      expect(snapshot.status).toStrictEqual("done");
-      expect(snapshot.value).toStrictEqual("Success");
+    await eventually(() => actor.snapshot()).toMatchObject({
+      status: "done",
+      value: "Success",
     });
   });
 });
