@@ -28,7 +28,7 @@
     "@restatedev/restate-sdk": "^1.7.0",
     "@restatedev/restate-sdk-testcontainers": "^1.7.0",
     "@restatedev/restate-sdk-clients": "^1.7.0",
-    "@restatedev/xstate": "^0.2.0",
+    "@restatedev/xstate": "workspace:^",
     "xstate": "^5.18.0"
   },
   "main": "./dist/index.cjs",
