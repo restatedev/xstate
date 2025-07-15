@@ -13,11 +13,11 @@
     "dev": "tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/auth/app.ts & tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/payment/app.ts & tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/versioning/app.ts"
   },
   "dependencies": {
-    "@restatedev/restate-sdk": "^1.7.0",
-    "xstate": "^5.18.0",
+    "@restatedev/restate-sdk": "catalog:",
+    "xstate": "catalog:",
     "@restatedev/xstate": "workspace:*"
   },
   "devDependencies": {
-    "@restatedev/restate-sdk-testcontainers": "^1.7.0"
+    "@restatedev/restate-sdk-testcontainers": "catalog:"
   }
 }

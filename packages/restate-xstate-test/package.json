@@ -21,11 +21,11 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@restatedev/restate-sdk": "^1.7.0",
-    "@restatedev/restate-sdk-testcontainers": "^1.7.0",
-    "@restatedev/restate-sdk-clients": "^1.7.0",
+    "@restatedev/restate-sdk": "catalog:",
+    "@restatedev/restate-sdk-testcontainers": "catalog:",
+    "@restatedev/restate-sdk-clients": "catalog:",
     "@restatedev/xstate": "workspace:^",
-    "xstate": "^5.18.0"
+    "xstate": "catalog:"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
