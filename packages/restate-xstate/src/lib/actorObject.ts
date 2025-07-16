@@ -25,7 +25,7 @@ import {
   createActor,
   createScheduledEventId,
   type RestateActorSystem,
-} from "./system.js";
+} from "./createActor.js";
 
 async function getOrSetVersion<
   LatestVersion extends string,

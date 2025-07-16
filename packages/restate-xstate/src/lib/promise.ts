@@ -18,7 +18,7 @@ import type {
   ActorRefEventSender,
   PromiseCreator,
 } from "./types.js";
-import type { RestateActorSystem } from "./system.js";
+import type { RestateActorSystem } from "./createActor.js";
 
 export type PromiseSnapshot<TOutput, TInput> = Snapshot<TOutput> & {
   input: TInput | undefined;
