@@ -21,11 +21,8 @@ import type {
   ActorObjectHandlers,
 } from "./types.js";
 import { resolveReferencedActor } from "./utils.js";
-import {
-  createActor,
-  createScheduledEventId,
-  type RestateActorSystem,
-} from "./createActor.js";
+import { createActor } from "./createActor.js";
+import { createScheduledEventId, type RestateActorSystem } from "./system.js";
 
 async function getOrSetVersion<
   LatestVersion extends string,
