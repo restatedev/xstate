@@ -6,3 +6,9 @@ onlyBuiltDependencies:
   - esbuild
   - protobufjs
   - ssh2
+
+catalog:
+  xstate: ^5.18.0
+  "@restatedev/restate-sdk": "^1.7.0"
+  "@restatedev/restate-sdk-testcontainers": "^1.7.0"
+  "@restatedev/restate-sdk-clients": "^1.7.0"

@@ -14,11 +14,11 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@restatedev/restate-sdk": "^1.7.0",
-    "@restatedev/restate-sdk-clients": "^1.7.0",
-    "xstate": "^5.18.0",
+    "@restatedev/restate-sdk": "catalog:",
+    "@restatedev/restate-sdk-clients": "catalog:",
+    "xstate": "catalog:",
     "@restatedev/xstate": "workspace:*",
     "@restatedev/xstate-test": "workspace:*",
-    "@restatedev/restate-sdk-testcontainers": "^1.7.0"
+    "@restatedev/restate-sdk-testcontainers": "catalog:"
   }
 }
