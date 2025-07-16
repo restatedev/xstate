@@ -7,13 +7,13 @@ import type {
   NonReducibleUnknown,
   Snapshot,
 } from "xstate";
-import type { ActorRefEventSender, RestateActorSystem } from "./lib.js";
 import {
   RESTATE_PROMISE_REJECT,
   RESTATE_PROMISE_RESOLVE,
 } from "./constants.js";
 import { serialiseActorRef } from "./utils.js";
-import type { PromiseCreator } from "./types.js";
+import type { ActorRefEventSender, PromiseCreator } from "./types.js";
+import type { RestateActorSystem } from "./actorObject.js";
 
 export type PromiseSnapshot<TOutput, TInput> = Snapshot<TOutput> & {
   input: TInput | undefined;

@@ -1,11 +1,11 @@
 export { xstate } from "./lib.js";
-export type { XStateOptions } from "./lib.js";
 export { fromPromise } from "./promise.js";
 export type { PromiseActorLogic, PromiseSnapshot } from "./promise.js";
-export type { PromiseCreator, SerialisableActorRef } from "./types.js";
 export type {
-  XStateApi,
-  ActorObject,
+  PromiseCreator,
+  SerialisableActorRef,
+  XStateOptions,
   SerialisableScheduledEvent,
   State,
-} from "./lib.js";
+} from "./types.js";
+export type { XStateApi, ActorObject } from "./actorObject.js";
