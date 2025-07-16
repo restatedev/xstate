@@ -1,6 +1,6 @@
 import type { AnyStateMachine } from "xstate";
-import type { XStateOptions } from "./types.js";
-import { actorObject, type XStateApi } from "./actorObject.js";
+import type { XStateApi, XStateOptions } from "./types.js";
+import { actorObject } from "./actorObject.js";
 
 export const xstate = <
   P extends string,

@@ -29,6 +29,8 @@ import type {
   State,
   XStateOptions,
   SerialisableScheduledEvent,
+  XStateApi,
+  ActorObjectHandlers,
 } from "./types.js";
 import { resolveReferencedActor, serialiseActorRef } from "./utils.js";
 
@@ -141,7 +143,9 @@ async function createSystem<T extends ActorSystemInfo>(
 
       events[scheduledEventId] = scheduledEvent;
       ctx
-        .objectSendClient(api, systemName, { delay })
+        .objectSendClient<
+          ActorObjectHandlers<AnyStateMachine>
+        >(api, systemName, { delay })
         .send({ scheduledEvent, source, target, event });
 
       ctx.set("events", events);
@@ -354,54 +358,6 @@ async function createActor<TLogic extends AnyStateMachine>(
   return actor as ActorEventSender<TLogic>;
 }
 
-/**
- * TODO: Investigate type issue:
- * Moving this type to a different file, breaks TS inference
- */
-export type ActorObject<
-  P extends string,
-  LatestStateMachine extends AnyStateMachine,
-  PreviousStateMachine extends AnyStateMachine,
-> = (
-  path: P,
-  latestLogic: LatestStateMachine,
-  options?: XStateOptions<PreviousStateMachine>,
-) => restate.VirtualObjectDefinition<
-  P,
-  {
-    create: (
-      ctx: restate.ObjectContext<State>,
-      request?: {
-        input?: InputFrom<LatestStateMachine>;
-      },
-    ) => Promise<Snapshot<unknown>>;
-    send: (
-      ctx: restate.ObjectContext<State>,
-      request?: {
-        scheduledEvent?: SerialisableScheduledEvent;
-        source?: SerialisableActorRef;
-        target?: SerialisableActorRef;
-        event: AnyEventObject;
-      },
-    ) => Promise<Snapshot<unknown> | undefined>;
-    snapshot: (ctx: restate.ObjectContext<State>) => Promise<Snapshot<unknown>>;
-    invokePromise: (
-      ctx: restate.ObjectSharedContext<State>,
-      input: {
-        self: SerialisableActorRef;
-        srcs: string[];
-        input: unknown;
-        version?: string;
-      },
-    ) => Promise<void>;
-  }
->;
-
-export type XStateApi<
-  P extends string,
-  LatestStateMachine extends AnyStateMachine,
-> = ReturnType<ActorObject<P, LatestStateMachine, AnyStateMachine>>;
-
 export interface RestateActorSystem<T extends ActorSystemInfo>
   extends ActorSystem<T> {
   _bookId: () => string;
@@ -432,7 +388,9 @@ export function actorObject<
   latestLogic: LatestStateMachine,
   options?: XStateOptions<PreviousStateMachine>,
 ) {
-  const api: XStateApi<string, LatestStateMachine> = { name: path };
+  const api: XStateApi<string, LatestStateMachine> = {
+    name: path,
+  };
 
   const versions = options?.versions ?? [];
 
@@ -667,24 +625,32 @@ export function actorObject<
 
           await resolvedPromise.then(
             (response) => {
-              ctx.objectSendClient(api, systemName).send({
-                source: self,
-                target: self,
-                event: {
-                  type: RESTATE_PROMISE_RESOLVE,
-                  data: response,
-                },
-              });
+              ctx
+                .objectSendClient<
+                  ActorObjectHandlers<LatestStateMachine>
+                >(api, systemName)
+                .send({
+                  source: self,
+                  target: self,
+                  event: {
+                    type: RESTATE_PROMISE_RESOLVE,
+                    data: response,
+                  },
+                });
             },
             (errorData: unknown) => {
-              ctx.objectSendClient(api, systemName).send({
-                source: self,
-                target: self,
-                event: {
-                  type: RESTATE_PROMISE_REJECT,
-                  data: errorData,
-                },
-              });
+              ctx
+                .objectSendClient<
+                  ActorObjectHandlers<LatestStateMachine>
+                >(api, systemName)
+                .send({
+                  source: self,
+                  target: self,
+                  event: {
+                    type: RESTATE_PROMISE_REJECT,
+                    data: errorData,
+                  },
+                });
             },
           );
         },

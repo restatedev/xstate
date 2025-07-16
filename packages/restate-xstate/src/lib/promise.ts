@@ -4,6 +4,7 @@ import type {
   ActorSystem,
   ActorSystemInfo,
   AnyActorRef,
+  AnyStateMachine,
   NonReducibleUnknown,
   Snapshot,
 } from "xstate";
@@ -12,7 +13,11 @@ import {
   RESTATE_PROMISE_RESOLVE,
 } from "./constants.js";
 import { serialiseActorRef } from "./utils.js";
-import type { ActorRefEventSender, PromiseCreator } from "./types.js";
+import type {
+  ActorObjectHandlers,
+  ActorRefEventSender,
+  PromiseCreator,
+} from "./types.js";
 import type { RestateActorSystem } from "./actorObject.js";
 
 export type PromiseSnapshot<TOutput, TInput> = Snapshot<TOutput> & {
@@ -91,12 +96,16 @@ export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
 
       const rs = system as RestateActorSystem<ActorSystemInfo>;
 
-      rs.ctx.objectSendClient(rs.api, rs.systemName).invokePromise({
-        self: serialiseActorRef(self),
-        srcs: actorSrc(self),
-        input: state.input,
-        version: rs.version,
-      });
+      rs.ctx
+        .objectSendClient<
+          ActorObjectHandlers<AnyStateMachine>
+        >(rs.api, rs.systemName)
+        .invokePromise({
+          self: serialiseActorRef(self),
+          srcs: actorSrc(self),
+          input: state.input,
+          version: rs.version,
+        });
 
       // note that we sent off the promise so we don't do it again
       rs._relay(self, self as ActorRefEventSender, {

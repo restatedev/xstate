@@ -7,5 +7,7 @@ export type {
   XStateOptions,
   SerialisableScheduledEvent,
   State,
+  XStateApi,
+  ActorObject,
+  ActorObjectHandlers,
 } from "./types.js";
-export type { XStateApi, ActorObject } from "./actorObject.js";
