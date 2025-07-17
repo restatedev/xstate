@@ -15,7 +15,7 @@
     "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
     "exports-check": "attw --pack .",
     "lint": "eslint",
-    "check-forgotten-exports": "api-extractor run --local",
+    "check-forgotten-exports": "api-extractor run --local && api-extractor run --local --config ./api-extractor.promise.json",
     "prepublishOnly": "pnpm -w verify"
   },
   "publishConfig": {
@@ -38,10 +38,21 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.cts",
+  "typesVersions": {
+    "*": {
+      "promise": [
+        "./dist/promise.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./promise": {
+      "import": "./dist/promise.js",
+      "require": "./dist/promise.cjs"
     },
     "./package.json": "./package.json"
   }

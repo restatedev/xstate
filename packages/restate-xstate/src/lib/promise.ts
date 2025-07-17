@@ -40,10 +40,13 @@ export type PromiseActorLogic<TOutput, TInput = unknown> = ActorLogic<
 };
 
 export type PromiseActorRef<TOutput> = ActorRefFrom<PromiseActorLogic<TOutput>>;
+export type FromPromise<TOutput, TInput extends NonReducibleUnknown> = (
+  promiseCreator: PromiseCreator<TOutput, TInput>,
+) => PromiseActorLogic<TOutput, TInput>;
 
 export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
-  promiseCreator: PromiseCreator<TOutput, TInput>,
-): PromiseActorLogic<TOutput, TInput> {
+  promiseCreator: Parameters<FromPromise<TOutput, TInput>>[0],
+): ReturnType<FromPromise<TOutput, TInput>> {
   const logic: PromiseActorLogic<TOutput, TInput> = {
     sentinel: "restate.promise.actor",
     config: promiseCreator,
