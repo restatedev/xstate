@@ -16,7 +16,7 @@ catalogs:
       specifier: ^1.7.0
       version: 1.7.3
     xstate:
-      specifier: ^5.18.0
+      specifier: ^5.20.0
       version: 5.20.1
 
 importers:
@@ -81,7 +81,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.0.14)(jiti@2.4.2)(tsx@4.20.3)(yaml@2.8.0)
       xstate:
-        specifier: ^5.20.1
+        specifier: 'catalog:'
         version: 5.20.1
 
   packages/examples:
