@@ -1,6 +1,7 @@
 import { log, setup } from "xstate";
 import * as restate from "@restatedev/restate-sdk";
-import { fromPromise, xstate } from "@restatedev/xstate";
+import { xstate } from "@restatedev/xstate";
+import { fromPromise } from "@restatedev/xstate/promise";
 
 export const machine = setup({
   types: {

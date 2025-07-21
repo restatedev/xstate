@@ -10,9 +10,10 @@
  * https://github.com/restatedev/sdk-typescript/blob/main/LICENSE
  */
 
-import { xstate, fromPromise } from "@restatedev/xstate";
+import { xstate } from "@restatedev/xstate";
 import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
+import { fromPromise } from "@restatedev/xstate/promise";
 
 import { createMachine, assign, type SnapshotFrom } from "xstate";
 import { eventually } from "./eventually.js";

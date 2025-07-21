@@ -16,6 +16,10 @@ export const baseConfig = defineConfig({
   ...(isWatch && {
     resolve: {
       alias: {
+        "@restatedev/xstate/promise": path.resolve(
+          __dirname,
+          "./packages/restate-xstate/src/promise.ts",
+        ),
         "@restatedev/xstate": path.resolve(
           __dirname,
           "./packages/restate-xstate/src/index.ts",
@@ -28,7 +32,11 @@ export const baseConfig = defineConfig({
       preserveSymlinks: true,
     },
     optimizeDeps: {
-      exclude: ["@restatedev/xstate", "@restatedev/xstate-test"],
+      exclude: [
+        "@restatedev/xstate",
+        "@restatedev/xstate/promise",
+        "@restatedev/xstate-test",
+      ],
     },
   }),
 });

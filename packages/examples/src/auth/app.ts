@@ -10,7 +10,8 @@
  */
 
 import * as restate from "@restatedev/restate-sdk";
-import { xstate, fromPromise } from "@restatedev/xstate";
+import { xstate } from "@restatedev/xstate";
+import { fromPromise } from "@restatedev/xstate/promise";
 import { createMachine, sendTo, type AnyActorRef } from "xstate";
 
 const authServerMachine = createMachine(
