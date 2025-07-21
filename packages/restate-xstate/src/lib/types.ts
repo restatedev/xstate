@@ -44,6 +44,8 @@ export type State = {
   events: { [key: string]: SerialisableScheduledEvent };
   children: { [key: string]: SerialisableActorRef };
   snapshot: Snapshot<unknown>;
+  /** Indicates whether a state machine has been disposed/cleaned after reaching it's final state */
+  disposed: boolean;
 };
 
 export interface ActorEventSender<TLogic extends AnyActorLogic>
@@ -57,6 +59,11 @@ export interface ActorRefEventSender extends AnyActorRef {
 
 export interface XStateOptions<PreviousStateMachine extends AnyStateMachine> {
   versions?: PreviousStateMachine[];
+  /**
+   * Represent time to live (in ms) of a state machine after it has reached a final state.
+   * @default Infinity
+   * */
+  finalStateTTL?: number;
 }
 
 export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
@@ -76,6 +83,7 @@ export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
     },
   ) => Promise<Snapshot<unknown> | undefined>;
   snapshot: (ctx: ObjectContext<State>) => Promise<Snapshot<unknown>>;
+  cleanupState: (ctx: ObjectContext<State>) => Promise<void>;
   invokePromise: (
     ctx: ObjectSharedContext<State>,
     input: {

@@ -23,6 +23,10 @@ import type {
 import { resolveReferencedActor } from "./utils.js";
 import { createActor } from "./createActor.js";
 import { createScheduledEventId, type RestateActorSystem } from "./system.js";
+import {
+  checkIfStateMachineShouldBeDisposed,
+  validateStateMachineIsNotDisposed,
+} from "./cleanupState..js";
 
 async function getOrSetVersion<
   LatestVersion extends string,
@@ -90,6 +94,7 @@ export function actorObject<
         ctx.clear("snapshot");
         ctx.clear("events");
         ctx.clear("children");
+        ctx.clear("disposed");
 
         const version = await getOrSetVersion(ctx, latestLogic.id);
         const logic = getLogic(
@@ -108,6 +113,14 @@ export function actorObject<
 
         const snapshot = root.getPersistedSnapshot();
         ctx.set("snapshot", snapshot);
+
+        await checkIfStateMachineShouldBeDisposed(
+          ctx,
+          api,
+          systemName,
+          options?.finalStateTTL,
+        );
+
         return snapshot;
       },
       send: async (
@@ -119,6 +132,7 @@ export function actorObject<
           event: AnyEventObject;
         },
       ): Promise<Snapshot<unknown> | undefined> => {
+        await validateStateMachineIsNotDisposed(ctx);
         const systemName = ctx.key;
 
         if (!request) {
@@ -190,11 +204,19 @@ export function actorObject<
         const nextSnapshot = root.getPersistedSnapshot();
         ctx.set("snapshot", nextSnapshot);
 
+        await checkIfStateMachineShouldBeDisposed(
+          ctx,
+          api,
+          systemName,
+          options?.finalStateTTL,
+        );
+
         return nextSnapshot;
       },
       snapshot: async (
         ctx: restate.ObjectContext<State>,
       ): Promise<Snapshot<unknown>> => {
+        await validateStateMachineIsNotDisposed(ctx);
         const systemName = ctx.key;
 
         // no need to set the version here if we are just getting a snapshot
@@ -225,6 +247,8 @@ export function actorObject<
             version?: string;
           },
         ) => {
+          await validateStateMachineIsNotDisposed(ctx);
+
           const systemName = ctx.key;
 
           if (version == undefined) {
@@ -334,6 +358,14 @@ export function actorObject<
                 });
             },
           );
+        },
+      ),
+      cleanupState: restate.handlers.object.exclusive(
+        { ingressPrivate: true },
+        // eslint-disable-next-line @typescript-eslint/require-await
+        async (ctx: restate.ObjectContext<State>) => {
+          ctx.clearAll();
+          ctx.set("disposed", true);
         },
       ),
     },
