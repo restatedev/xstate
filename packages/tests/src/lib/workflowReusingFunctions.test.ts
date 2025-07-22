@@ -13,10 +13,17 @@ import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
-import { assign, sendParent, setup, type SnapshotFrom } from "xstate";
+import {
+  assign,
+  createMachine,
+  forwardTo,
+  sendParent,
+  setup,
+  type SnapshotFrom,
+} from "xstate";
 import { eventually } from "./eventually.js";
 
-async function delay(ms: number): Promise<void> {
+function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve();
@@ -38,7 +45,13 @@ interface PaymentReceivedEvent {
   };
 }
 
-// https://github.com/serverlessworkflow/specification/tree/main/examples#event-based-service-invocation
+interface ConfirmationCompletedEvent {
+  type: "ConfirmationCompletedEvent";
+  payment: {
+    amount: number;
+  };
+}
+
 export const workflow = setup({
   types: {
     events: {} as PaymentReceivedEvent,
@@ -67,7 +80,7 @@ export const workflow = setup({
         };
       }) => {
         console.log("Running checkfunds");
-        await delay(1000);
+        await delay(10);
 
         console.log("checkfunds done");
 
@@ -76,19 +89,17 @@ export const workflow = setup({
         };
       },
     ),
-    sendSuccessEmail: fromPromise(async ({ input }) => {
+    sendSuccessEmail: fromPromise(({ input }) => {
       console.log({ input });
       console.log("Running sendSuccessEmail");
-      await delay(1000);
-
       console.log("sendSuccessEmail done");
+      return Promise.resolve();
     }),
-    sendInsufficientFundsEmail: fromPromise(async ({ input }) => {
+    sendInsufficientFundsEmail: fromPromise(({ input }) => {
       console.log({ input });
       console.log("Running sendInsufficientFundsEmail");
-      await delay(1000);
-
       console.log("sendInsufficientFundsEmail done");
+      return Promise.resolve();
     }),
   },
   guards: {
@@ -96,7 +107,6 @@ export const workflow = setup({
   },
 }).createMachine({
   id: "paymentconfirmation",
-
   initial: "Pending",
   context: {
     customer: null,
@@ -168,19 +178,43 @@ export const workflow = setup({
     },
     End: {
       type: "final",
-      entry: sendParent(({ context }) => ({
-        type: "ConfirmationCompletedEvent",
-        payment: context.payment,
-      })),
+      entry: sendParent(
+        () =>
+          ({
+            type: "ConfirmationCompletedEvent",
+            payment: { amount: 1337 },
+          }) satisfies ConfirmationCompletedEvent,
+      ),
+    },
+  },
+});
+
+const parentWorkflow = createMachine({
+  id: "parent",
+  types: {} as {
+    events: PaymentReceivedEvent | ConfirmationCompletedEvent;
+  },
+  invoke: {
+    id: "paymentconfirmation",
+    src: workflow,
+  },
+  on: {
+    PaymentReceivedEvent: { actions: forwardTo("paymentconfirmation") },
+    ConfirmationCompletedEvent: {
+      actions: assign({
+        payment: ({ event }) => event.payment,
+      }),
     },
   },
 });
 
 describe("Reusing functions workflow", () => {
   it("Will complete successfully", { timeout: 20_000 }, async () => {
-    const wf = xstate("workflow", workflow);
+    const wf = xstate("workflow", parentWorkflow);
 
-    using actor = await createRestateTestActor<SnapshotFrom<typeof workflow>>({
+    using actor = await createRestateTestActor<
+      SnapshotFrom<typeof parentWorkflow>
+    >({
       machine: wf,
     });
 
@@ -199,8 +233,11 @@ describe("Reusing functions workflow", () => {
     });
 
     await eventually(() => actor.snapshot()).toMatchObject({
-      status: "done",
-      value: "End",
+      context: {
+        payment: {
+          amount: 1337,
+        },
+      },
     });
   });
 });
