@@ -23,7 +23,7 @@ import {
 } from "xstate";
 import { eventually } from "./eventually.js";
 
-async function delay(ms: number): Promise<void> {
+function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve();
@@ -89,15 +89,17 @@ export const workflow = setup({
         };
       },
     ),
-    sendSuccessEmail: fromPromise(async ({ input }) => {
+    sendSuccessEmail: fromPromise(({ input }) => {
       console.log({ input });
       console.log("Running sendSuccessEmail");
       console.log("sendSuccessEmail done");
+      return Promise.resolve();
     }),
-    sendInsufficientFundsEmail: fromPromise(async ({ input }) => {
+    sendInsufficientFundsEmail: fromPromise(({ input }) => {
       console.log({ input });
       console.log("Running sendInsufficientFundsEmail");
       console.log("sendInsufficientFundsEmail done");
+      return Promise.resolve();
     }),
   },
   guards: {
@@ -230,11 +232,7 @@ describe("Reusing functions workflow", () => {
       },
     });
 
-    await eventually(async () => {
-      const snapshot = await actor.snapshot();
-      console.log("Snapshot:", snapshot);
-      return snapshot;
-    }).toMatchObject({
+    await eventually(() => actor.snapshot()).toMatchObject({
       context: {
         payment: {
           amount: 1337,
