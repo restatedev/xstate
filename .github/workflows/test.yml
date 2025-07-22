@@ -1,10 +1,10 @@
-name: Build and test
+name: tmp test
 
 on:
   push:
-    branches: [main]
+    branches: [test]
   pull_request:
-    branches: [main]
+    branches: [test]
 
 jobs:
   build:
