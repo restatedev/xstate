@@ -1,14 +1,14 @@
 packages:
   - packages/*
 
+catalog:
+  '@restatedev/restate-sdk': ^1.7.0
+  '@restatedev/restate-sdk-clients': ^1.7.0
+  '@restatedev/restate-sdk-testcontainers': ^1.7.0
+  xstate: ^5.20.1
+
 onlyBuiltDependencies:
   - cpu-features
   - esbuild
   - protobufjs
   - ssh2
-
-catalog:
-  xstate: ^5.20.0
-  "@restatedev/restate-sdk": "^1.7.0"
-  "@restatedev/restate-sdk-testcontainers": "^1.7.0"
-  "@restatedev/restate-sdk-clients": "^1.7.0"
