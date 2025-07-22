@@ -206,9 +206,6 @@ const parentWorkflow = createMachine({
   },
 });
 
-/**
- * NOTE: this test is skipped because invoking a workflow from another workflow is not support.
- */
 describe("Reusing functions workflow", () => {
   it("Will complete successfully", { timeout: 20_000 }, async () => {
     const wf = xstate("workflow", parentWorkflow);
