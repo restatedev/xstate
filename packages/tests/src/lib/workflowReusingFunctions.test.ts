@@ -45,6 +45,13 @@ interface PaymentReceivedEvent {
   };
 }
 
+interface ConfirmationCompletedEvent {
+  type: "ConfirmationCompletedEvent";
+  payment: {
+    amount: number;
+  };
+}
+
 export const workflow = setup({
   types: {
     events: {} as PaymentReceivedEvent,
@@ -73,7 +80,7 @@ export const workflow = setup({
         };
       }) => {
         console.log("Running checkfunds");
-        await delay(1000);
+        await delay(10);
 
         console.log("checkfunds done");
 
@@ -85,15 +92,11 @@ export const workflow = setup({
     sendSuccessEmail: fromPromise(async ({ input }) => {
       console.log({ input });
       console.log("Running sendSuccessEmail");
-      await delay(1000);
-
       console.log("sendSuccessEmail done");
     }),
     sendInsufficientFundsEmail: fromPromise(async ({ input }) => {
       console.log({ input });
       console.log("Running sendInsufficientFundsEmail");
-      await delay(1000);
-
       console.log("sendInsufficientFundsEmail done");
     }),
   },
@@ -102,7 +105,6 @@ export const workflow = setup({
   },
 }).createMachine({
   id: "paymentconfirmation",
-
   initial: "Pending",
   context: {
     customer: null,
@@ -174,10 +176,13 @@ export const workflow = setup({
     },
     End: {
       type: "final",
-      entry: sendParent(({ context }) => ({
-        type: "ConfirmationCompletedEvent",
-        payment: context.payment,
-      })),
+      entry: sendParent(
+        () =>
+          ({
+            type: "ConfirmationCompletedEvent",
+            payment: { amount: 1337 },
+          }) satisfies ConfirmationCompletedEvent,
+      ),
     },
   },
 });
@@ -185,7 +190,7 @@ export const workflow = setup({
 const parentWorkflow = createMachine({
   id: "parent",
   types: {} as {
-    events: PaymentReceivedEvent;
+    events: PaymentReceivedEvent | ConfirmationCompletedEvent;
   },
   invoke: {
     id: "paymentconfirmation",
@@ -193,10 +198,10 @@ const parentWorkflow = createMachine({
   },
   on: {
     PaymentReceivedEvent: { actions: forwardTo("paymentconfirmation") },
-    "*": {
-      actions: ({ event }) => {
-        console.log("Received event", event);
-      },
+    ConfirmationCompletedEvent: {
+      actions: assign({
+        payment: ({ event }) => event.payment,
+      }),
     },
   },
 });
@@ -228,9 +233,16 @@ describe("Reusing functions workflow", () => {
       },
     });
 
-    await eventually(() => actor.snapshot()).toMatchObject({
-      status: "done",
-      value: "End",
+    await eventually(async () => {
+      const snapshot = await actor.snapshot();
+      console.log("Snapshot:", snapshot);
+      return snapshot;
+    }).toMatchObject({
+      context: {
+        payment: {
+          amount: 1337,
+        },
+      },
     });
   });
 });
