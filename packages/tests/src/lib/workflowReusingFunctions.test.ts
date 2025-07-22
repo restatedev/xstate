@@ -13,7 +13,14 @@ import { xstate, fromPromise } from "@restatedev/xstate";
 import { describe, it } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 
-import { assign, createMachine, forwardTo, sendParent, setup, type SnapshotFrom } from "xstate";
+import {
+  assign,
+  createMachine,
+  forwardTo,
+  sendParent,
+  setup,
+  type SnapshotFrom,
+} from "xstate";
 import { eventually } from "./eventually.js";
 
 async function delay(ms: number): Promise<void> {
@@ -176,58 +183,54 @@ export const workflow = setup({
 });
 
 const parentWorkflow = createMachine({
-  id: 'parent',
+  id: "parent",
   types: {} as {
     events: PaymentReceivedEvent;
   },
   invoke: {
-    id: 'paymentconfirmation',
+    id: "paymentconfirmation",
     src: workflow,
   },
   on: {
-    PaymentReceivedEvent: { actions: forwardTo('paymentconfirmation') },
-    '*': {
+    PaymentReceivedEvent: { actions: forwardTo("paymentconfirmation") },
+    "*": {
       actions: ({ event }) => {
-        console.log('Received event', event);
-      }
-    }
-  }
+        console.log("Received event", event);
+      },
+    },
+  },
 });
 
 /**
  * NOTE: this test is skipped because invoking a workflow from another workflow is not support.
  */
 describe("Reusing functions workflow", () => {
-  it(
-    "Will complete successfully",
-    { timeout: 20_000 },
-    async () => {
-      const wf = xstate("workflow", parentWorkflow);
+  it("Will complete successfully", { timeout: 20_000 }, async () => {
+    const wf = xstate("workflow", parentWorkflow);
 
-      using actor = await createRestateTestActor<
-        SnapshotFrom<typeof parentWorkflow>
-      >({
-        machine: wf,
-      });
+    using actor = await createRestateTestActor<
+      SnapshotFrom<typeof parentWorkflow>
+    >({
+      machine: wf,
+    });
 
-      await actor.send({
-        type: "PaymentReceivedEvent",
-        accountId: "1234",
-        payment: {
-          amount: 100,
-        },
-        customer: {
-          name: "John Doe",
-        },
-        funds: {
-          available: true,
-        },
-      });
+    await actor.send({
+      type: "PaymentReceivedEvent",
+      accountId: "1234",
+      payment: {
+        amount: 100,
+      },
+      customer: {
+        name: "John Doe",
+      },
+      funds: {
+        available: true,
+      },
+    });
 
-      await eventually(() => actor.snapshot()).toMatchObject({
-        status: "done",
-        value: "End",
-      });
-    },
-  );
+    await eventually(() => actor.snapshot()).toMatchObject({
+      status: "done",
+      value: "End",
+    });
+  });
 });
