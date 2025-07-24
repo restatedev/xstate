@@ -13,3 +13,4 @@ packages/*/src/generated/*
 packages/*/buf.lock
 
 restate-data
+.DS_Store

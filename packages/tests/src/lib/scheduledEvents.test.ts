@@ -9,7 +9,8 @@
  * https://github.com/restatedev/sdk-typescript/blob/main/LICENSE
  */
 
-import { xstate, fromPromise } from "@restatedev/xstate";
+import { xstate } from "@restatedev/xstate";
+import { fromPromise } from "@restatedev/xstate/promise";
 import { describe, expect, it, vi } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 

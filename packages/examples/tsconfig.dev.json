@@ -2,7 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@restatedev/xstate": ["../restate-xstate/src/index.ts"]
+      "@restatedev/xstate": ["../restate-xstate/src/index.ts"],
+      "@restatedev/xstate/promise": ["../restate-xstate/src/promise.ts"]
     }
   }
 }
