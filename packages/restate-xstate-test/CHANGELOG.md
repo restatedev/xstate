@@ -1,5 +1,19 @@
 # @restatedev/xstate-test
 
+## 0.3.1
+
+### Patch Changes
+
+- f96eba7: Update TS SDK, and add final state TTL option
+
+  ```ts
+  // Clear the state after 100ms of machine reaching its final state
+  xstate("myMachine", machine, { finalStateTTL: 100 });
+  ```
+
+- Updated dependencies [f96eba7]
+  - @restatedev/xstate@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes
