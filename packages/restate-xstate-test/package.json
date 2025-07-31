@@ -1,6 +1,6 @@
 {
   "name": "@restatedev/xstate-test",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Utility for testing xstate with Restate",
   "license": "MIT",
   "author": "Restate developers",

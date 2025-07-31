@@ -54,11 +54,11 @@ const counterv2 = createMachine({
   },
 });
 
-await restate
-  .endpoint()
-  .bind(
+await restate.serve({
+  services: [
     xstate("counter", counterv2, {
       versions: [counterv1],
     }),
-  )
-  .listen(9082);
+  ],
+  port: 9082,
+});
