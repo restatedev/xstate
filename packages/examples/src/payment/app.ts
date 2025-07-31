@@ -122,4 +122,7 @@ export const machine = setup({
   },
 });
 
-await restate.endpoint().bind(xstate("payment", machine)).listen(9081);
+await restate.serve({
+  services: [xstate("payment", machine)],
+  port: 9081,
+});
