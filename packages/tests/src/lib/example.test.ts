@@ -45,7 +45,8 @@ describe("Simple count machine", () => {
       }>({
         machine: counter,
       });
-
+      const nextEvents = await machine.nextEvents();
+      expect(nextEvents).toStrictEqual(['inc', 'dec'])
       await machine.send({ type: "inc" });
       await machine.send({ type: "inc" });
       await machine.send({ type: "dec" });
