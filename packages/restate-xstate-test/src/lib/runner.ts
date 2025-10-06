@@ -23,6 +23,8 @@ export type MachineApi = {
   send: (context: unknown, args: { event: AnyEventObject }) => Promise<unknown>;
 
   snapshot: (context: unknown) => Promise<unknown>;
+
+  nextEvents: (context: unknown) => Promise<string[]>;
 };
 
 export type RunMachineOptions = {
@@ -34,6 +36,7 @@ export type RunMachineOptions = {
 export type RunningMachine<SnapshotType> = {
   send: (event: AnyEventObject) => Promise<SnapshotType>;
   snapshot(): Promise<SnapshotType>;
+  nextEvents(): Promise<SnapshotType>;
   [Symbol.dispose](): void;
 };
 
@@ -65,6 +68,10 @@ export async function createRestateTestActor<SnapshotType>(
 
       snapshot: async () => {
         return (await client.snapshot()) as SnapshotType;
+      },
+
+      nextEvents: async () => {
+        return (await client.nextEvents()) as SnapshotType;
       },
 
       [Symbol.dispose]: () => {

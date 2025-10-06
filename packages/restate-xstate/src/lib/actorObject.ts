@@ -232,6 +232,26 @@ export function actorObject<
 
         return root.getPersistedSnapshot();
       },
+      nextEvents: async (
+        ctx: restate.ObjectContext<State>,
+      ): Promise<string[]> => {
+        await validateStateMachineIsNotDisposed(ctx);
+        const systemName = ctx.key;
+
+        // no need to set the version here if we are just getting a snapshot
+        let version = await ctx.get("version");
+        if (version == null) {
+          version = latestLogic.id;
+        }
+        const logic = getLogic(latestLogic, versions, version);
+
+        const root = await createActor<
+          LatestStateMachine | PreviousStateMachine
+        >(ctx, api, systemName, version, logic);
+
+        const snapshot = root.getSnapshot();
+        return [...new Set([...snapshot._nodes.flatMap((sn) => sn.ownEvents)])];
+      },
       invokePromise: restate.handlers.object.shared(
         async (
           ctx: restate.ObjectSharedContext<State>,
