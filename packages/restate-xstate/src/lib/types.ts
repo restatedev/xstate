@@ -93,6 +93,7 @@ export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
       version?: string;
     },
   ) => Promise<void>;
+  checkTag: (ctx: ObjectContext<State>, request: { tag: string }) => Promise<{isFinal: boolean; hasTag: boolean; snapshot: Snapshot<unknown>}>;
 };
 
 export type ActorObject<
@@ -109,3 +110,36 @@ export type XStateApi<
   P extends string,
   LatestStateMachine extends AnyStateMachine,
 > = ReturnType<ActorObject<P, LatestStateMachine, AnyStateMachine>>;
+
+export type NoContextActorObjectHandlers<ActorObjectHandler> = {
+  [Key in keyof ActorObjectHandler]: 
+  ActorObjectHandler[Key] extends (ctx: any, req: infer R) => Promise<infer T>
+    ? (req: R) => Promise<T>
+    : ActorObjectHandler[Key] extends (ctx: any) => Promise<infer T2>
+    ? () => Promise<T2>
+    : never;
+}
+
+export type WatchableXStateApi = Pick<NoContextActorObjectHandlers<ActorObjectHandlers<AnyStateMachine>>,  "send" | "snapshot" | "checkTag">;
+
+export type WatcherDefaults = {
+  defaultTag?: string;
+  defaultIntervalMs?: number;
+  defaultTimeoutMs?: number;
+}
+
+export type WatchRequest = {
+  objectName: string;
+  objectId: string;
+  event: unknown;
+  tag?: string;
+  intervalMs?: number;
+  timeoutMs?: number;
+}
+
+export type WatchResult = {
+  timedOut: boolean;
+  waitedMs: number;
+  result?: unknown;
+  error?: Error;
+}
