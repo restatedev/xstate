@@ -10,7 +10,7 @@
     "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
     "build": "tsc -b",
     "lint": "eslint",
-    "dev": "tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/auth/app.ts & tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/payment/app.ts & tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/versioning/app.ts"
+    "dev": "tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/auth/app.ts & tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/payment/app.ts & tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/versioning/app.ts & tsx watch --include ../restate-xstate/src --tsconfig ./tsconfig.dev.json ./src/syncWorkflows/app.ts"
   },
   "dependencies": {
     "@restatedev/restate-sdk": "catalog:",
