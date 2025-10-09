@@ -46,6 +46,38 @@ async function getOrSetVersion<
   return version;
 }
 
+async function getVersion<
+  LatestVersion extends string,
+  PreviousVersion extends string,
+>(
+  ctx: restate.ObjectSharedContext<State>,
+  latestVersion: LatestVersion,
+): Promise<LatestVersion | PreviousVersion> {
+  let version = (await ctx.get("version")) as
+    | LatestVersion
+    | PreviousVersion
+    | null;
+  if (version == null) {
+    version = latestVersion;
+  }
+  return version;
+}
+
+function withNoopSet<S extends restate.TypedState>(
+  ctx: restate.ObjectContext<S> | restate.ObjectSharedContext<S>,
+): restate.ObjectContext<S> {
+  return new Proxy(ctx, {
+    get(target, prop) {
+      if (prop === "set" || prop === "clear" || prop === "clearAll") {
+        return () => {
+          // noop
+        };
+      }
+      return (target as any)[prop];
+    }
+  }) as restate.ObjectContext<S>;
+}
+
 function getLogic<
   LatestStateMachine extends AnyStateMachine,
   PreviousStateMachine extends AnyStateMachine,
@@ -134,6 +166,10 @@ export function actorObject<
       ): Promise<Snapshot<unknown> | undefined> => {
         await validateStateMachineIsNotDisposed(ctx);
         const systemName = ctx.key;
+
+        console.log(
+          `Received send request for system ${path} with key ${ctx.key}`,
+        );
 
         if (!request) {
           throw new restate.TerminalError("Must provide a request");
@@ -366,6 +402,42 @@ export function actorObject<
         async (ctx: restate.ObjectContext<State>) => {
           ctx.clearAll();
           ctx.set("disposed", true);
+        },
+      ),
+      checkTag: restate.handlers.object.shared(
+        async (
+          ctx: restate.ObjectSharedContext<State>,
+          req?: { tag: string },
+        ) => {
+          await validateStateMachineIsNotDisposed(ctx);
+          const systemName = ctx.key;
+          const version = await getVersion(ctx, latestLogic.id);
+          const logic = getLogic(latestLogic, versions, version);
+          const root = await createActor<LatestStateMachine | PreviousStateMachine>(
+            withNoopSet(ctx),
+            api,
+            systemName,
+            version,
+            logic,
+          );
+
+          const snapshot = root.getPersistedSnapshot();
+          const liveState = root.getSnapshot();
+          const tag = req?.tag || "sync";
+
+          if ("hasTag" in liveState && (liveState as any).hasTag(tag)) {
+            return {
+              isFinal: snapshot.status === "done",
+              hasTag: true,
+              snapshot,
+            };
+          } else {
+            return {
+              isFinal: snapshot.status === "done",
+              hasTag: false,
+              snapshot,
+            };
+          }
         },
       ),
     },

@@ -1,6 +1,7 @@
 import type { AnyStateMachine } from "xstate";
-import type { XStateApi, XStateOptions } from "./types.js";
+import type { XStateApi, XStateOptions, XStateWatcherApi } from "./types.js";
 import { actorObject } from "./actorObject.js";
+import { actorWatcherObject } from "./actorWatcherObject.js";
 
 export const xstate = <
   P extends string,
@@ -10,7 +11,7 @@ export const xstate = <
   path: P,
   logic: LatestStateMachine,
   options?: XStateOptions<PreviousStateMachine>,
-): XStateApi<P, LatestStateMachine> => {
+): XStateApi<P, LatestStateMachine> | XStateWatcherApi<P, LatestStateMachine> => {
   if (options?.versions) {
     const idsSet = new Set<string>();
     for (const version of options.versions) {
@@ -26,5 +27,15 @@ export const xstate = <
     }
   }
 
-  return actorObject(path, logic, options);
+  const originalActor = actorObject(path, logic, options);
+
+  if (options?.watcher && options?.watcher.defaultTag !== '') {
+    const finalActor = originalActor as XStateWatcherApi<P, LatestStateMachine>;
+    // Note: '/' is not allowed in object names
+    // Create a corresponding watcher object for the original actor
+    finalActor.watcher = actorWatcherObject(`${path}.watcher`, options.watcher);
+  }
+
+
+  return originalActor;
 };

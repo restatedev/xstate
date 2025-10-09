@@ -28,8 +28,16 @@ export const machine = setup({
     updateBalance: fromPromise(
       async ({ input }: { input: { userID: string; amount: number } }) => {
         console.log(`Adding ${input.amount} to the balance of ${input.userID}`);
-        const res = await fetch("https://httpbin.org/get");
-        return res.json();
+        // const res = await fetch("https://httpbin.org/get");
+        // if (!res.ok) {
+        //   throw new Error(`Failed to update balance for ${input.userID}`);
+        // }
+        // Simulate a delay to mimic a real API call
+        // const response = await res.json();
+        // console.log(`Dummy API response ${res.status}, ${JSON.stringify(response)}`);
+        // return response;
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        return { success: true };
       },
     ),
   },
@@ -62,6 +70,7 @@ export const machine = setup({
       },
     },
     Approved: {
+      tags: ["sync"],
       invoke: {
         input: ({ context }) => ({
           userID: context.senderUserID,
@@ -106,7 +115,10 @@ export const machine = setup({
         src: "updateBalance",
       },
     },
-    Succeeded: {},
+    Succeeded: {
+      type: "final",
+      entry: log(({ context }) => `Payment ${context.paymentID} succeeded`),
+    },
     Refunding: {
       invoke: {
         input: ({ context }) => ({
@@ -122,7 +134,9 @@ export const machine = setup({
   },
 });
 
+const paymentWithSync = xstate("payment", machine, { watcher: { defaultTag: "sync" } }) as any;
+
 await restate.serve({
-  services: [xstate("payment", machine)],
+  services: [paymentWithSync, paymentWithSync.watcher!],
   port: 9081,
 });

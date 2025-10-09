@@ -24,16 +24,13 @@ export function actorWatcherObject(
           ctx: restate.ObjectContext<any>,
           req: WatchRequest,
         ): Promise<WatchResult> => {
-          if (
-            !req.objectName ||
-            !req.event ||
-            !req.objectId ||
-            typeof req.event !== "object"
-          ) {
+          if (!ctx.key || !req.event || typeof req.event !== "object") {
             throw new restate.TerminalError(
-              "Invalid request: objectName, event, and objectId are required",
+              "Invalid request: key, event are required",
             );
           }
+
+          const originalMachineName = watcherName.replace(/\.watcher/g, "");
 
           const tag = req.tag || watcherDefaults?.defaultTag || "sync";
           const intervalMs =
@@ -43,15 +40,32 @@ export function actorWatcherObject(
 
           // Send event to the machine object
           const machineClient = ctx.objectClient<WatchableXStateApi>(
-            { name: req.objectName },
-            req.objectId,
+            { name: originalMachineName } as unknown as restate.VirtualObjectDefinition<string, WatchableXStateApi>,
+            ctx.key,
+          );
+          if (!machineClient) {
+            throw new restate.TerminalError(
+              `Machine object ${originalMachineName} not found`,
+            );
+          }
+
+          console.log(
+            `Sending event ${JSON.stringify(req.event)} to machine:${originalMachineName}, with key:${ctx.key}, with tag:${tag}`,
           );
 
           // Send the event to the machine instance
-          (machineClient as any).send({
-            event: req.event,
-            source: "actorWatcherObject/sendWithAwait",
-          });
+          try {
+            (machineClient as any).send({
+              event: req.event,
+              source: "actorWatcherObject/sendWithAwait",
+            });
+          } catch (error) {
+            console.error(`Error sending event to ${originalMachineName} machine: ${error}`);
+            throw new restate.TerminalError(
+              `Error sending event to machine ${originalMachineName}: ${error}`,
+            );
+          }
+
           // Wait for the response
           await ctx.sleep(intervalMs);
 
@@ -65,13 +79,15 @@ export function actorWatcherObject(
 
           while (true) {
             let checkTagResult;
+            console.log(`Checking tag "${tag}" on object "${originalMachineName}" with ID "${ctx.key}"`);
             try {
               checkTagResult = await (machineClient as any).checkTag({ tag });
             } catch (error) {
               console.error(`Error checking tag: ${error}`);
               await ctx.sleep(intervalMs);
             }
-
+            console.log(`CheckTag Result on object "${originalMachineName}" with ID "${ctx.key}, Result: ${JSON.stringify(checkTagResult)}`);
+            // Check if the response is valid
             if (
               !checkTagResult ||
               typeof checkTagResult !== "object" ||
@@ -107,6 +123,7 @@ export function actorWatcherObject(
             }
             await ctx.sleep(intervalMs);
           }
+          
         },
       ),
     },
