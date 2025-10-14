@@ -25,6 +25,9 @@ export function actorWatcherObject(
           ctx: restate.ObjectContext<any>,
           req: WatchRequest,
         ): Promise<WatchResult> => {
+
+          // Start the timer to observe transitions
+          const startTime = Date.now();
           if (!ctx.key || !req.event || typeof req.event !== "object") {
             throw new restate.TerminalError(
               "Invalid request: key, event are required",
@@ -33,16 +36,17 @@ export function actorWatcherObject(
 
           const originalMachineName = watcherName.replace(/\.watcher/g, "");
           const eventWatchUntils = watcherDefaults?.events?.find(
-            (definedEvent) => definedEvent.event === req.event.type,
+            (definedEvent) => definedEvent.event === req.event.type && definedEvent.condition === req.until?.condition,
           );
           if (!eventWatchUntils) {
             throw new restate.TerminalError(
               `Event ${req.event.type} is not defined while defining watcher defaults`,
             );
           }
+          
           if (
             !eventWatchUntils?.condition ||
-            !ValidWatchCondition[eventWatchUntils.condition]
+            !Object.values(ValidWatchCondition).includes(eventWatchUntils.condition)
           ) {
             throw new restate.TerminalError(
               "Invalid event request: watcher 'condition' must be one of ValidWatchCondition values",
@@ -91,8 +95,7 @@ export function actorWatcherObject(
             );
           }
 
-          // Start the timer to observe transitions
-          const startTime = Date.now();
+          
 
           console.log(
             `Sending event ${JSON.stringify(req.event)} to machine:${originalMachineName}, with key:${ctx.key}, with request:${req}`,
@@ -135,6 +138,7 @@ export function actorWatcherObject(
           console.log(
             `Received response from machine: ${originalMachineName}, with key:${ctx.key}. Result: ${JSON.stringify(result)}`,
           );
+          result.waitedMs = Date.now() - startTime;
           return result;
           
         },

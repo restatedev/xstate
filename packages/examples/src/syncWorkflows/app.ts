@@ -157,13 +157,27 @@ const transactionMachine = createMachine(
             invoke: {
               src: "commitStep4",
               onDone: {
-                target: "#transaction.success",
+                target: "#transaction.recordTransaction",
               },
               onError: {
                 target: "#transaction.failed",
               },
             },
           }
+        },
+      },
+      recordTransaction: {
+        invoke: {
+          src: "recordTransaction",
+          onDone: {
+            target: "success",
+            actions: assign({
+              transactionStatus: ({ event }) => event.output.status,
+            }),
+          },
+          onError: {
+            target: "failed",
+          },
         },
       },
       success: {
@@ -200,6 +214,12 @@ const transactionMachine = createMachine(
         await new Promise((resolve) => setTimeout(resolve, 3000));
         return { status: "step4-success" };
       }),
+      recordTransaction: fromPromise(async ({ input }) => {
+        // Simulate recording transaction logic
+        console.log("Recording transaction:", input);
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+        return { status: "transaction-recorded" };
+      }),
     },
   },
 );
@@ -219,8 +239,11 @@ const transactionWithSync = xstate(
   transactionMachine,
   {
     watcher: {
-      events: [{ event: "START", condition: "tagCleared", observeTag: "transactionCommit" }], // Event response will be sent when the tag is cleared
+    //   events: [{ event: "START", condition: "tagCleared", observeTag: "transactionCommit" }, { event: "START", condition: "tagObserved", observeTag: "transactionStep2Commit" }], // Event response will be sent when the tag is cleared or observed based on client request
+        //   events: [{ event: "START", condition: "tagCleared", observeTag: "transactionCommit" }], // Event response will be sent when the tag is cleared
       //   events: [{ event: "START", condition: "tagObserved", observedTag: "transactionStep2Commit" }], // Event response will be sent when the tag is observed
+        events: [{ event: "START", condition: "final" }], // Event response will be sent when final state is reached
+
 
       // You can also use 'final' as the condition
       //   condition: "final", // Will wait for the machine to reach a final state

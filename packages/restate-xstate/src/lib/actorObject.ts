@@ -448,7 +448,7 @@ export function actorObject<
 
           if (
             !req.condition ||
-            !ValidWatchCondition[req.condition]
+            !Object.values(ValidWatchCondition).includes(req.condition)
           ) {
             throw new restate.TerminalError(
               "Invalid request: 'condition' must be one of ValidWatchCondition values",
@@ -487,7 +487,7 @@ export function actorObject<
             // Get the current state of the machine
             const hasTag = await selfClient.hasTag({ tag });
             const snapshot = await selfClient.snapshot() as any;
-            const isFinal = snapshot.isFinal;
+            const isFinal = snapshot.status === 'done';
             console.log(
               `Live snapshot of state machine ${systemName} at version ${version}: ${JSON.stringify(
                 snapshot,

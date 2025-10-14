@@ -164,7 +164,7 @@ export type WatchRequest = {
   event: {
     type: string;
   };
-  until?: WatchEvent[];
+  until?: WatchEvent;
   intervalMs?: number;
   timeoutMs?: number;
 };
