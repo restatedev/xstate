@@ -170,9 +170,6 @@ export function actorObject<
         await validateStateMachineIsNotDisposed(ctx);
         const systemName = ctx.key;
 
-        console.log(
-          `Received send request for system ${path} with key ${ctx.key}`,
-        );
 
         if (!request) {
           throw new restate.TerminalError("Must provide a request");
@@ -442,10 +439,6 @@ export function actorObject<
           const version = await getVersion(ctx, latestLogic.id);
           const start = Date.now();
 
-          console.log(
-            `Received waitFor request for system ${path} with key ${ctx.key}, request: ${JSON.stringify(req)}`,
-          );
-
           if (
             !req.condition ||
             !Object.values(ValidWatchCondition).includes(req.condition)
@@ -468,6 +461,10 @@ export function actorObject<
             );
           }
 
+          ctx.console.log(
+            `Waiting for condition ${req.condition} with tag ${req.observeTag} or resultKey ${req.resultKey} in objectId ${systemName}`,
+          );
+
           const until = req.condition;
           const tag = req.observeTag as string;
           const awaitResultKey = req.resultKey;
@@ -488,11 +485,6 @@ export function actorObject<
             const hasTag = await selfClient.hasTag({ tag });
             const snapshot = await selfClient.snapshot() as any;
             const isFinal = snapshot.status === 'done';
-            console.log(
-              `Live snapshot of state machine ${systemName} at version ${version}: ${JSON.stringify(
-                snapshot,
-              )}`,
-            );
             let awaitResultValue;
             if (awaitResultKey && snapshot && "context" in snapshot) {
               awaitResultValue = snapshot.context[awaitResultKey];
@@ -533,7 +525,6 @@ export function actorObject<
             }
             
             if (!tagExists) {
-              console.log(`Tag "${tag}" is not defined in any state of the machine. Aborting wait.`);
               return {
                 timedOut: false,
                 waitedMs: Date.now() - start,
@@ -553,14 +544,8 @@ export function actorObject<
                 error: new Error(`Timeout after ${timeoutMs}ms waiting for ${until} condition on machine ${systemName}`),
               };
             }
-            console.log(
-              `---------------- checking machine status ----------------`,
-            );
             const { isFinal, hasTag, snapshot, awaitResultValue } =
               await machineCurrentStatus();
-            console.log(
-              `Current state: ${JSON.stringify({ isFinal, hasTag, awaitResultValue })}`,
-            );
             
             // Update tag observation state
             if (hasTag) {
@@ -568,7 +553,6 @@ export function actorObject<
             }
             
             if (until === "final" && isFinal) {
-              console.log(`Final state reached: ${JSON.stringify(snapshot)}`);
               return {
                 timedOut: false,
                 waitedMs: Date.now() - start,
@@ -576,7 +560,6 @@ export function actorObject<
               };
             }
             if (until === "tagObserved" && hasTag) {
-              console.log(`Tag observed: ${tag}`);
               return {
                 timedOut: false,
                 waitedMs: Date.now() - start,
@@ -584,7 +567,6 @@ export function actorObject<
               };
             }
             if (until === "tagCleared" && !hasTag && tagWasObserved) {
-              console.log(`Tag was observed and is now cleared: ${tag}`);
               return {
                 timedOut: false,
                 waitedMs: Date.now() - start,
@@ -592,9 +574,6 @@ export function actorObject<
               };
             }
             if (until === "result" && awaitResultValue) {
-              console.log(
-                `Result condition met: ${awaitResultKey}, value: ${awaitResultValue}`,
-              );
               return {
                 timedOut: false,
                 waitedMs: Date.now() - start,
@@ -604,8 +583,8 @@ export function actorObject<
                     : snapshot,
               };
             }
-            console.log(
-              `Current state before sleep:: condition:${until}, tag:${tag}, resultKey:${awaitResultKey}, isFinal:${isFinal}, hasTag:${hasTag}, tagWasObserved:${tagWasObserved}, awaitResultValue:${awaitResultValue}`,
+            ctx.console.log(
+              `Condition ${until} not met yet, waiting for ${intervalMs}ms...`,
             );
             await ctx.sleep(intervalMs);
           }

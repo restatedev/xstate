@@ -75,7 +75,7 @@ export function actorWatcherObject(
           const resultKey = eventWatchUntils?.resultKey;
           const observeTag = eventWatchUntils?.observeTag;
           const intervalMs =
-            req.intervalMs || watcherDefaults?.intervalMs || 1000;
+            req.intervalMs || watcherDefaults?.intervalMs || 500;
           const timeoutMs =
             req.timeoutMs || watcherDefaults?.timeoutMs || 60000;
 
@@ -97,8 +97,8 @@ export function actorWatcherObject(
 
           
 
-          console.log(
-            `Sending event ${JSON.stringify(req.event)} to machine:${originalMachineName}, with key:${ctx.key}, with request:${req}`,
+          ctx.console.log(
+            `Sending event ${JSON.stringify(req.event)} to machine:${originalMachineName}, with key:${ctx.key}`,
           );
 
           // Send the event to the machine instance
@@ -108,9 +108,6 @@ export function actorWatcherObject(
               source: "actorWatcherObject/sendWithAwait",
             });
           } catch (error) {
-            console.error(
-              `Error sending event to ${originalMachineName} machine: ${error}`,
-            );
             throw new restate.TerminalError(
               `Error sending event to machine ${originalMachineName}: ${error}`,
             );
@@ -119,14 +116,11 @@ export function actorWatcherObject(
           
 
           // Sleep for the initial interval for send event to materialize
-          console.log(
+          ctx.console.log(
             `Sleeping for ${intervalMs}ms to allow event to materialize in machine: ${originalMachineName}, with key: ${ctx.key}`,
           );
           await ctx.sleep(intervalMs);
 
-          console.log(
-            `Waiting for response from machine:${originalMachineName}, with key:${ctx.key}`,
-          );
           let result: WatchResult = (await (machineClient as any).waitFor({
             condition,
             observeTag,
@@ -135,8 +129,8 @@ export function actorWatcherObject(
             timeoutMs,
           })) as WatchResult;
 
-          console.log(
-            `Received response from machine: ${originalMachineName}, with key:${ctx.key}. Result: ${JSON.stringify(result)}`,
+          ctx.console.log(
+            `Received response from machine: ${originalMachineName}, with key:${ctx.key}}`,
           );
           result.waitedMs = Date.now() - startTime;
           return result;
