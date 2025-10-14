@@ -19,6 +19,8 @@ import type {
   SerialisableScheduledEvent,
   XStateApi,
   ActorObjectHandlers,
+  WaitForRequest,
+  WatchResult,
 } from "./types.js";
 import { resolveReferencedActor } from "./utils.js";
 import { createActor } from "./createActor.js";
@@ -74,7 +76,7 @@ function withNoopSet<S extends restate.TypedState>(
         };
       }
       return (target as any)[prop];
-    }
+    },
   }) as restate.ObjectContext<S>;
 }
 
@@ -404,39 +406,209 @@ export function actorObject<
           ctx.set("disposed", true);
         },
       ),
-      checkTag: restate.handlers.object.shared(
+      hasTag: async (
+        ctx: restate.ObjectContext<State>,
+        req?: { tag: string },
+      ) => {
+        await validateStateMachineIsNotDisposed(ctx);
+        const systemName = ctx.key;
+
+        // no need to set the version here if we are just getting a snapshot
+        let version = await ctx.get("version");
+        if (version == null) {
+          version = latestLogic.id;
+        }
+        const logic = getLogic(latestLogic, versions, version);
+
+        const root = await createActor<
+          LatestStateMachine | PreviousStateMachine
+        >(ctx, api, systemName, version, logic);
+
+        await validateStateMachineIsNotDisposed(ctx);
+
+        const liveState = root.getSnapshot();
+        const tag = req?.tag;
+
+        return "hasTag" in liveState && (liveState as any).hasTag(tag);
+      },
+      waitFor: restate.handlers.object.shared(
         async (
           ctx: restate.ObjectSharedContext<State>,
-          req?: { tag: string },
-        ) => {
+          req: WaitForRequest,
+        ): Promise<WatchResult> => {
           await validateStateMachineIsNotDisposed(ctx);
           const systemName = ctx.key;
           const version = await getVersion(ctx, latestLogic.id);
-          const logic = getLogic(latestLogic, versions, version);
-          const root = await createActor<LatestStateMachine | PreviousStateMachine>(
-            withNoopSet(ctx),
-            api,
-            systemName,
-            version,
-            logic,
+          const start = Date.now();
+
+          console.log(
+            `Received waitFor request for system ${path} with key ${ctx.key}, request: ${JSON.stringify(req)}`,
           );
 
-          const snapshot = root.getPersistedSnapshot();
-          const liveState = root.getSnapshot();
-          const tag = req?.tag || "sync";
+          if (
+            !req.until ||
+            !["final", "tagObserved", "tagCleared", "result"].includes(
+              req.until,
+            )
+          ) {
+            throw new restate.TerminalError(
+              "Invalid request: 'until' must be one of 'final', 'tagObserved', 'tagCleared', or 'result'",
+            );
+          }
+          if (req.until === "result" && !req.resultKey) {
+            throw new restate.TerminalError(
+              "Invalid request: 'resultKey' must be provided when 'until' is 'result'",
+            );
+          }
+          if (
+            (req.until === "tagObserved" || req.until === "tagCleared") &&
+            !req.observedTag
+          ) {
+            throw new restate.TerminalError(
+              "Invalid request: 'tag' must be provided when 'until' is 'tagObserved'",
+            );
+          }
 
-          if ("hasTag" in liveState && (liveState as any).hasTag(tag)) {
+          const until = req.until;
+          const tag = req.observedTag as string;
+          const awaitResultKey = req.resultKey;
+          const intervalMs = req.intervalMs || 1000;
+          const timeoutMs = req.timeoutMs || 30000;
+
+          const selfClient = ctx.objectClient<
+            ActorObjectHandlers<AnyStateMachine>
+          >(api, systemName);
+          if (!selfClient) {
+            throw new restate.TerminalError(
+              `Actor object ${systemName} not found`,
+            );
+          }
+
+          const machineCurrentStatus = async () => {
+            // Get the current state of the machine
+            const hasTag = await selfClient.hasTag({ tag });
+            const snapshot = await selfClient.snapshot() as any;
+            const isFinal = snapshot.isFinal;
+            console.log(
+              `Live snapshot of state machine ${systemName} at version ${version}: ${JSON.stringify(
+                snapshot,
+              )}`,
+            );
+            let awaitResultValue;
+            if (awaitResultKey && snapshot && "context" in snapshot) {
+              awaitResultValue = snapshot.context[awaitResultKey];
+            }
+
             return {
-              isFinal: snapshot.status === "done",
-              hasTag: true,
+              isFinal,
+              hasTag,
               snapshot,
+              awaitResultValue,
             };
-          } else {
-            return {
-              isFinal: snapshot.status === "done",
-              hasTag: false,
-              snapshot,
-            };
+          };
+
+          // Check if tag exists in machine definition (for tagObserved and tagCleared)
+          if ((until === "tagObserved" || until === "tagCleared") && tag) {
+            const logic = getLogic(latestLogic, versions, version);
+            let tagExists = false;
+            
+            // Check if the tag is defined in any state
+            if (logic.config && logic.config.states) {
+              // Recursively check states for tags
+              const checkStateForTag = (states: Record<string, any>) => {
+                for (const stateName in states) {
+                  const state = states[stateName];
+                  // Check if this state has the tag
+                  if (state.tags && state.tags.includes(tag)) {
+                    return true;
+                  }
+                  // Check nested states
+                  if (state.states && checkStateForTag(state.states)) {
+                    return true;
+                  }
+                }
+                return false;
+              };
+              
+              tagExists = checkStateForTag(logic.config.states);
+            }
+            
+            if (!tagExists) {
+              console.log(`Tag "${tag}" is not defined in any state of the machine. Aborting wait.`);
+              return {
+                timedOut: false,
+                waitedMs: Date.now() - start,
+                error:  new Error(`Tag "${tag}" is not defined in any state of the machine ${systemName}`),
+              };
+            }
+          }
+
+          // Track if we've seen the tag before
+          let tagWasObserved = false;
+
+          while (true) {
+            if (Date.now() - start > timeoutMs) {
+              return { 
+                timedOut: true, 
+                waitedMs: Date.now() - start,
+                error: new Error(`Timeout after ${timeoutMs}ms waiting for ${until} condition on machine ${systemName}`),
+              };
+            }
+            console.log(
+              `---------------- checking machine status ----------------`,
+            );
+            const { isFinal, hasTag, snapshot, awaitResultValue } =
+              await machineCurrentStatus();
+            console.log(
+              `Current state: ${JSON.stringify({ isFinal, hasTag, awaitResultValue })}`,
+            );
+            
+            // Update tag observation state
+            if (hasTag) {
+              tagWasObserved = true;
+            }
+            
+            if (until === "final" && isFinal) {
+              console.log(`Final state reached: ${JSON.stringify(snapshot)}`);
+              return {
+                timedOut: false,
+                waitedMs: Date.now() - start,
+                result: snapshot,
+              };
+            }
+            if (until === "tagObserved" && hasTag) {
+              console.log(`Tag observed: ${tag}`);
+              return {
+                timedOut: false,
+                waitedMs: Date.now() - start,
+                result: awaitResultKey ? awaitResultValue : snapshot,
+              };
+            }
+            if (until === "tagCleared" && !hasTag && tagWasObserved) {
+              console.log(`Tag was observed and is now cleared: ${tag}`);
+              return {
+                timedOut: false,
+                waitedMs: Date.now() - start,
+                result: awaitResultKey ? awaitResultValue : snapshot,
+              };
+            }
+            if (until === "result" && awaitResultValue) {
+              console.log(
+                `Result condition met: ${awaitResultKey}, value: ${awaitResultValue}`,
+              );
+              return {
+                timedOut: false,
+                waitedMs: Date.now() - start,
+                result:
+                  awaitResultKey && awaitResultValue
+                    ? awaitResultValue
+                    : snapshot,
+              };
+            }
+            console.log(
+              `Current state before sleep:: condition:${until}, tag:${tag}, resultKey:${awaitResultKey}, isFinal:${isFinal}, hasTag:${hasTag}, tagWasObserved:${tagWasObserved}, awaitResultValue:${awaitResultValue}`,
+            );
+            await ctx.sleep(intervalMs);
           }
         },
       ),

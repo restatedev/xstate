@@ -70,7 +70,6 @@ export const machine = setup({
       },
     },
     Approved: {
-      tags: ["sync"],
       invoke: {
         input: ({ context }) => ({
           userID: context.senderUserID,
@@ -134,9 +133,9 @@ export const machine = setup({
   },
 });
 
-const paymentWithSync = xstate("payment", machine, { watcher: { defaultTag: "sync" } }) as any;
+const paymentMachine = xstate("payment", machine) as any;
 
 await restate.serve({
-  services: [paymentWithSync, paymentWithSync.watcher!],
+  services: [paymentMachine],
   port: 9081,
 });

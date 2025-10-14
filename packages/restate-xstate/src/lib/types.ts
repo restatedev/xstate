@@ -94,7 +94,10 @@ export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
       version?: string;
     },
   ) => Promise<void>;
-  checkTag: (ctx: ObjectContext<State>, request: { tag: string }) => Promise<{isFinal: boolean; hasTag: boolean; snapshot: Snapshot<unknown>}>;
+  hasTag: (
+    ctx: ObjectContext<State>,
+    request: { tag: string },
+  ) => Promise<boolean>;
 };
 
 export type ActorObject<
@@ -120,34 +123,59 @@ export type XStateWatcherApi<
 };
 
 export type NoContextActorObjectHandlers<ActorObjectHandler> = {
-  [Key in keyof ActorObjectHandler]: 
-  ActorObjectHandler[Key] extends (ctx: any, req: infer R) => Promise<infer T>
+  [Key in keyof ActorObjectHandler]: ActorObjectHandler[Key] extends (
+    ctx: any,
+    req: infer R,
+  ) => Promise<infer T>
     ? (req: R) => Promise<T>
     : ActorObjectHandler[Key] extends (ctx: any) => Promise<infer T2>
-    ? () => Promise<T2>
-    : never;
-}
+      ? () => Promise<T2>
+      : never;
+};
 
-export type WatchableXStateApi = Pick<NoContextActorObjectHandlers<ActorObjectHandlers<AnyStateMachine>>,  "send" | "snapshot" | "checkTag">;
+export type WatchableXStateApi = Pick<
+  NoContextActorObjectHandlers<ActorObjectHandlers<AnyStateMachine>>,
+  "send" | "snapshot" | "hasTag"
+>;
 
+export type WatchUntil = "final" | "tagObserved" | "tagCleared" | "result";
+export type WatchEvent = {
+  event: string;
+  until?: WatchUntil;
+  observedTag?: string;
+  resultKey?: string;
+};
+
+export type WatchEventUntils = {
+  until?: WatchUntil;
+  observedTag?: string;
+  resultKey?: string;
+};
 export type WatcherDefaults = {
-  defaultTag?: string;
-  defaultIntervalMs?: number;
-  defaultTimeoutMs?: number;
-}
+  events?: WatchEvent[];
+  intervalMs?: number;
+  timeoutMs?: number;
+};
 
 export type WatchRequest = {
   objectName: string;
   objectId: string;
-  event: unknown;
-  tag?: string;
+  event: {
+    type: string;
+  };
+  until?: WatchEvent[];
   intervalMs?: number;
   timeoutMs?: number;
-}
+};
+
+export type WaitForRequest = WatchEventUntils & {
+  intervalMs?: number;
+  timeoutMs?: number;
+};
 
 export type WatchResult = {
   timedOut: boolean;
   waitedMs: number;
   result?: unknown;
   error?: Error;
-}
+};

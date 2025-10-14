@@ -31,16 +31,50 @@ export function actorWatcherObject(
           }
 
           const originalMachineName = watcherName.replace(/\.watcher/g, "");
+          const eventWatchUntils = watcherDefaults?.events?.find(
+            (definedEvent) => definedEvent.event === req.event.type,
+          );
+          if (!eventWatchUntils) {
+            throw new restate.TerminalError(
+              `Event ${req.event.type} is not defined in watcher defaults`,
+            );
+          }
+          if (
+            !eventWatchUntils?.until ||
+            !["final", "tagObserved", "tagCleared", "result"].includes(
+              eventWatchUntils.until,
+            )
+          ) {
+            throw new restate.TerminalError(
+              "Invalid request: 'until' must be one of 'final', 'tagObserved', 'tagCleared', or 'result'",
+            );
+          }
 
-          const tag = req.tag || watcherDefaults?.defaultTag || "sync";
+          if (
+            eventWatchUntils?.until === "result" &&
+            !eventWatchUntils.resultKey
+          ) {
+            throw new restate.TerminalError(
+              "Invalid request: 'resultKey' must be provided when 'until' is 'result'",
+            );
+          }
+
+          const until = eventWatchUntils?.until;
+          const resultKey = eventWatchUntils?.resultKey;
+          const tag = eventWatchUntils?.observedTag;
           const intervalMs =
-            req.intervalMs || watcherDefaults?.defaultIntervalMs || 1000;
+            req.intervalMs || watcherDefaults?.intervalMs || 1000;
           const timeoutMs =
-            req.timeoutMs || watcherDefaults?.defaultTimeoutMs || 60000;
+            req.timeoutMs || watcherDefaults?.timeoutMs || 30000;
 
           // Send event to the machine object
           const machineClient = ctx.objectClient<WatchableXStateApi>(
-            { name: originalMachineName } as unknown as restate.VirtualObjectDefinition<string, WatchableXStateApi>,
+            {
+              name: originalMachineName,
+            } as unknown as restate.VirtualObjectDefinition<
+              string,
+              WatchableXStateApi
+            >,
             ctx.key,
           );
           if (!machineClient) {
@@ -49,8 +83,11 @@ export function actorWatcherObject(
             );
           }
 
+          // Start the timer to observe transitions
+          const startTime = Date.now();
+
           console.log(
-            `Sending event ${JSON.stringify(req.event)} to machine:${originalMachineName}, with key:${ctx.key}, with tag:${tag}`,
+            `Sending event ${JSON.stringify(req.event)} to machine:${originalMachineName}, with key:${ctx.key}, with request:${req}`,
           );
 
           // Send the event to the machine instance
@@ -60,69 +97,37 @@ export function actorWatcherObject(
               source: "actorWatcherObject/sendWithAwait",
             });
           } catch (error) {
-            console.error(`Error sending event to ${originalMachineName} machine: ${error}`);
+            console.error(
+              `Error sending event to ${originalMachineName} machine: ${error}`,
+            );
             throw new restate.TerminalError(
               `Error sending event to machine ${originalMachineName}: ${error}`,
             );
           }
 
-          // Wait for the response
+          
+
+          // Sleep for the initial interval for send event to materialize
+          console.log(
+            `Sleeping for ${intervalMs}ms to allow event to materialize in machine: ${originalMachineName}, with key: ${ctx.key}`,
+          );
           await ctx.sleep(intervalMs);
 
-          // Start the timer to observe transitions
-          const startTime = Date.now();
+          console.log(
+            `Waiting for response from machine:${originalMachineName}, with key:${ctx.key}`,
+          );
+          let result: WatchResult = (await (machineClient as any).waitFor({
+            until,
+            tag,
+            resultKey,
+            intervalMs,
+            timeoutMs,
+          })) as WatchResult;
 
-          let result: WatchResult = {
-            timedOut: false,
-            waitedMs: Date.now() - startTime,
-          };
-
-          while (true) {
-            let checkTagResult;
-            console.log(`Checking tag "${tag}" on object "${originalMachineName}" with ID "${ctx.key}"`);
-            try {
-              checkTagResult = await (machineClient as any).checkTag({ tag });
-            } catch (error) {
-              console.error(`Error checking tag: ${error}`);
-              await ctx.sleep(intervalMs);
-            }
-            console.log(`CheckTag Result on object "${originalMachineName}" with ID "${ctx.key}, Result: ${JSON.stringify(checkTagResult)}`);
-            // Check if the response is valid
-            if (
-              !checkTagResult ||
-              typeof checkTagResult !== "object" ||
-              !("isFinal" in checkTagResult) ||
-              !("hasTag" in checkTagResult) ||
-              !("snapshot" in checkTagResult)
-            ) {
-              console.error(
-                `Invalid response from checkTag object could be still materializing: ${checkTagResult}. Retrying...`,
-              );
-              await ctx.sleep(intervalMs);
-            }
-            // Check if the state is final or tag has fallen off
-            if (
-              checkTagResult &&
-              (checkTagResult.isFinal || !checkTagResult.hasTag)
-            ) {
-              return {
-                timedOut: false,
-                waitedMs: Date.now() - startTime,
-                result: checkTagResult.snapshot,
-              };
-            }
-            // Check if the timeout has been reached
-            if (Date.now() - startTime >= timeoutMs) {
-              return {
-                timedOut: true,
-                waitedMs: Date.now() - startTime,
-                error: new Error(
-                  `Timeout after ${timeoutMs}ms waiting for tag "${tag}" on object "${req.objectName}" with ID "${req.objectId}"`,
-                ),
-              };
-            }
-            await ctx.sleep(intervalMs);
-          }
+          console.log(
+            `Received response from machine: ${originalMachineName}, with key:${ctx.key}. Result: ${JSON.stringify(result)}`,
+          );
+          return result;
           
         },
       ),

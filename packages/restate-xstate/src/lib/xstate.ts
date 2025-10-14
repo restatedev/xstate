@@ -1,5 +1,5 @@
 import type { AnyStateMachine } from "xstate";
-import type { XStateApi, XStateOptions, XStateWatcherApi } from "./types.js";
+import type { XStateApi, XStateOptions, XStateWatcherApi, WatchUntil } from "./types.js";
 import { actorObject } from "./actorObject.js";
 import { actorWatcherObject } from "./actorWatcherObject.js";
 
@@ -29,7 +29,7 @@ export const xstate = <
 
   const originalActor = actorObject(path, logic, options);
 
-  if (options?.watcher && options?.watcher.defaultTag !== '') {
+  if (options?.watcher && options?.watcher.events != undefined) {
     const finalActor = originalActor as XStateWatcherApi<P, LatestStateMachine>;
     // Note: '/' is not allowed in object names
     // Create a corresponding watcher object for the original actor
