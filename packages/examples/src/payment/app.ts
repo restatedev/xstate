@@ -28,16 +28,8 @@ export const machine = setup({
     updateBalance: fromPromise(
       async ({ input }: { input: { userID: string; amount: number } }) => {
         console.log(`Adding ${input.amount} to the balance of ${input.userID}`);
-        // const res = await fetch("https://httpbin.org/get");
-        // if (!res.ok) {
-        //   throw new Error(`Failed to update balance for ${input.userID}`);
-        // }
-        // Simulate a delay to mimic a real API call
-        // const response = await res.json();
-        // console.log(`Dummy API response ${res.status}, ${JSON.stringify(response)}`);
-        // return response;
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        return { success: true };
+        const res = await fetch("https://httpbin.org/get");
+        return res.json();
       },
     ),
   },
@@ -114,10 +106,7 @@ export const machine = setup({
         src: "updateBalance",
       },
     },
-    Succeeded: {
-      type: "final",
-      entry: log(({ context }) => `Payment ${context.paymentID} succeeded`),
-    },
+    Succeeded: {},
     Refunding: {
       invoke: {
         input: ({ context }) => ({
@@ -133,9 +122,7 @@ export const machine = setup({
   },
 });
 
-const paymentMachine = xstate("payment", machine) as any;
-
 await restate.serve({
-  services: [paymentMachine],
+  services: [xstate("payment", machine)],
   port: 9081,
 });
