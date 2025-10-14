@@ -16,6 +16,10 @@ export type {
   XStateApi,
   ActorObject,
   ActorObjectHandlers,
+  WatcherDefaults,
+  XStateWatcherApi,
+  WatchEvent,
+  WatchCondition,
 } from "./lib/types.js";
 /**
  * @deprecated Please import from `@restatedev/xstate/promise`

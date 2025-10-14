@@ -66,21 +66,6 @@ async function getVersion<
   return version;
 }
 
-function withNoopSet<S extends restate.TypedState>(
-  ctx: restate.ObjectContext<S> | restate.ObjectSharedContext<S>,
-): restate.ObjectContext<S> {
-  return new Proxy(ctx, {
-    get(target, prop) {
-      if (prop === "set" || prop === "clear" || prop === "clearAll") {
-        return () => {
-          // noop
-        };
-      }
-      return (target as any)[prop];
-    },
-  }) as restate.ObjectContext<S>;
-}
-
 function getLogic<
   LatestStateMachine extends AnyStateMachine,
   PreviousStateMachine extends AnyStateMachine,
