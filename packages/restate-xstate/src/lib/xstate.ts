@@ -1,5 +1,5 @@
 import type { AnyStateMachine } from "xstate";
-import type { XStateApi, XStateOptions, XStateWatcherApi, WatchUntil } from "./types.js";
+import type { XStateApi, XStateOptions, XStateWatcherApi } from "./types.js";
 import { actorObject } from "./actorObject.js";
 import { actorWatcherObject } from "./actorWatcherObject.js";
 

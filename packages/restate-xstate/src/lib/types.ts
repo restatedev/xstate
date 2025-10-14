@@ -138,19 +138,20 @@ export type WatchableXStateApi = Pick<
   "send" | "snapshot" | "hasTag"
 >;
 
-export type WatchUntil = "final" | "tagObserved" | "tagCleared" | "result";
+export type WatchCondition = "final" | "tagObserved" | "tagCleared" | "result";
+export enum ValidWatchCondition {
+  "final",
+  "tagObserved",
+  "tagCleared",
+  "result"
+}
 export type WatchEvent = {
   event: string;
-  until?: WatchUntil;
-  observedTag?: string;
+  condition?: WatchCondition;
+  observeTag?: string;
   resultKey?: string;
 };
 
-export type WatchEventUntils = {
-  until?: WatchUntil;
-  observedTag?: string;
-  resultKey?: string;
-};
 export type WatcherDefaults = {
   events?: WatchEvent[];
   intervalMs?: number;
@@ -168,7 +169,10 @@ export type WatchRequest = {
   timeoutMs?: number;
 };
 
-export type WaitForRequest = WatchEventUntils & {
+export type WaitForRequest = {
+  condition: WatchCondition;
+  observeTag?: string;
+  resultKey?: string;
   intervalMs?: number;
   timeoutMs?: number;
 };

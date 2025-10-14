@@ -209,7 +209,7 @@ const creditCardChargeWithSync = xstate(
   creditCardChargeMachine,
   {
     watcher: {
-      events: [{ event: "START", until: "result", resultKey: "notifyStatus" }],
+      events: [{ event: "START", condition: "result", resultKey: "notifyStatus" }],
     },
   },
 ) as any;
@@ -219,13 +219,13 @@ const transactionWithSync = xstate(
   transactionMachine,
   {
     watcher: {
-      events: [{ event: "START", until: "tagCleared", observedTag: "transactionCommit" }], // Event response will be sent when the tag is cleared
-      //   events: [{ event: "START", until: "tagObserved", observedTag: "transactionStep2Commit" }], // Event response will be sent when the tag is observed
-      
-      // You can also use 'final' as the until condition
-      //   until: "final", // Will wait for the machine to reach a final state
-      //   until: "tagObserved" or "tagCleared", // Will wait for the value in observedTag to be observed/cleared
-      //   until: "result", resultKey: "transactionStatus", // Will return the value of this key from the state machine context
+      events: [{ event: "START", condition: "tagCleared", observeTag: "transactionCommit" }], // Event response will be sent when the tag is cleared
+      //   events: [{ event: "START", condition: "tagObserved", observedTag: "transactionStep2Commit" }], // Event response will be sent when the tag is observed
+
+      // You can also use 'final' as the condition
+      //   condition: "final", // Will wait for the machine to reach a final state
+      //   condition: "tagObserved" or "tagCleared", // Will wait for the value in observedTag to be observed/cleared
+      //   condition: "result", resultKey: "transactionStatus", // Will return the value of this key from the state machine context
       // You can also define multiple events with different until conditions
     
     },

@@ -22,6 +22,7 @@ import type {
   WaitForRequest,
   WatchResult,
 } from "./types.js";
+import { ValidWatchCondition } from "./types.js";
 import { resolveReferencedActor } from "./utils.js";
 import { createActor } from "./createActor.js";
 import { createScheduledEventId, type RestateActorSystem } from "./system.js";
@@ -446,34 +447,32 @@ export function actorObject<
           );
 
           if (
-            !req.until ||
-            !["final", "tagObserved", "tagCleared", "result"].includes(
-              req.until,
-            )
+            !req.condition ||
+            !ValidWatchCondition[req.condition]
           ) {
             throw new restate.TerminalError(
-              "Invalid request: 'until' must be one of 'final', 'tagObserved', 'tagCleared', or 'result'",
+              "Invalid request: 'condition' must be one of ValidWatchCondition values",
             );
           }
-          if (req.until === "result" && !req.resultKey) {
+          if (req.condition === "result" && !req.resultKey) {
             throw new restate.TerminalError(
-              "Invalid request: 'resultKey' must be provided when 'until' is 'result'",
+              "Invalid request: 'resultKey' must be provided when 'condition' is 'result'",
             );
           }
           if (
-            (req.until === "tagObserved" || req.until === "tagCleared") &&
-            !req.observedTag
+            (req.condition === "tagObserved" || req.condition === "tagCleared") &&
+            !req.observeTag
           ) {
             throw new restate.TerminalError(
-              "Invalid request: 'tag' must be provided when 'until' is 'tagObserved'",
+              "Invalid request: 'tag' must be provided when 'condition' is 'tagObserved' or 'tagCleared'",
             );
           }
 
-          const until = req.until;
-          const tag = req.observedTag as string;
+          const until = req.condition;
+          const tag = req.observeTag as string;
           const awaitResultKey = req.resultKey;
           const intervalMs = req.intervalMs || 1000;
-          const timeoutMs = req.timeoutMs || 30000;
+          const timeoutMs = req.timeoutMs || 60000;
 
           const selfClient = ctx.objectClient<
             ActorObjectHandlers<AnyStateMachine>

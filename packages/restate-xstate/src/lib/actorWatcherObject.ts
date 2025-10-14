@@ -5,11 +5,12 @@
  */
 
 import * as restate from "@restatedev/restate-sdk";
-import type {
-  WatchableXStateApi,
-  WatcherDefaults,
-  WatchRequest,
-  WatchResult,
+import {
+  ValidWatchCondition,
+  type WatchableXStateApi,
+  type WatcherDefaults,
+  type WatchRequest,
+  type WatchResult,
 } from "./types.js";
 
 export function actorWatcherObject(
@@ -36,36 +37,43 @@ export function actorWatcherObject(
           );
           if (!eventWatchUntils) {
             throw new restate.TerminalError(
-              `Event ${req.event.type} is not defined in watcher defaults`,
+              `Event ${req.event.type} is not defined while defining watcher defaults`,
             );
           }
           if (
-            !eventWatchUntils?.until ||
-            !["final", "tagObserved", "tagCleared", "result"].includes(
-              eventWatchUntils.until,
-            )
+            !eventWatchUntils?.condition ||
+            !ValidWatchCondition[eventWatchUntils.condition]
           ) {
             throw new restate.TerminalError(
-              "Invalid request: 'until' must be one of 'final', 'tagObserved', 'tagCleared', or 'result'",
+              "Invalid event request: watcher 'condition' must be one of ValidWatchCondition values",
             );
           }
 
           if (
-            eventWatchUntils?.until === "result" &&
+            eventWatchUntils?.condition === "result" &&
             !eventWatchUntils.resultKey
           ) {
             throw new restate.TerminalError(
-              "Invalid request: 'resultKey' must be provided when 'until' is 'result'",
+              "Invalid request: 'resultKey' must be provided when 'condition' is 'result'",
+            );
+          }
+          if (
+            (eventWatchUntils?.condition === "tagObserved" ||
+              eventWatchUntils?.condition === "tagCleared") &&
+            !eventWatchUntils.observeTag
+          ) {
+            throw new restate.TerminalError(
+              "Invalid request: 'observeTag' must be provided when 'condition' is 'tagObserved' or 'tagCleared'",
             );
           }
 
-          const until = eventWatchUntils?.until;
+          const condition = eventWatchUntils?.condition;
           const resultKey = eventWatchUntils?.resultKey;
-          const tag = eventWatchUntils?.observedTag;
+          const observeTag = eventWatchUntils?.observeTag;
           const intervalMs =
             req.intervalMs || watcherDefaults?.intervalMs || 1000;
           const timeoutMs =
-            req.timeoutMs || watcherDefaults?.timeoutMs || 30000;
+            req.timeoutMs || watcherDefaults?.timeoutMs || 60000;
 
           // Send event to the machine object
           const machineClient = ctx.objectClient<WatchableXStateApi>(
@@ -117,8 +125,8 @@ export function actorWatcherObject(
             `Waiting for response from machine:${originalMachineName}, with key:${ctx.key}`,
           );
           let result: WatchResult = (await (machineClient as any).waitFor({
-            until,
-            tag,
+            condition,
+            observeTag,
             resultKey,
             intervalMs,
             timeoutMs,
