@@ -64,6 +64,7 @@ export interface XStateOptions<PreviousStateMachine extends AnyStateMachine> {
    * @default Infinity
    * */
   finalStateTTL?: number;
+  watcher?: WatcherDefaults;
 }
 
 export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
@@ -93,6 +94,10 @@ export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
       version?: string;
     },
   ) => Promise<void>;
+  hasTag: (
+    ctx: ObjectContext<State>,
+    request: { tag: string },
+  ) => Promise<boolean>;
 };
 
 export type ActorObject<
@@ -109,3 +114,72 @@ export type XStateApi<
   P extends string,
   LatestStateMachine extends AnyStateMachine,
 > = ReturnType<ActorObject<P, LatestStateMachine, AnyStateMachine>>;
+
+export type XStateWatcherApi<
+  P extends string,
+  LatestStateMachine extends AnyStateMachine,
+> = XStateApi<P, LatestStateMachine> & {
+  watcher: VirtualObjectDefinition<string, any>;
+};
+
+export type NoContextActorObjectHandlers<ActorObjectHandler> = {
+  [Key in keyof ActorObjectHandler]: ActorObjectHandler[Key] extends (
+    ctx: any,
+    req: infer R,
+  ) => Promise<infer T>
+    ? (req: R) => Promise<T>
+    : ActorObjectHandler[Key] extends (ctx: any) => Promise<infer T2>
+      ? () => Promise<T2>
+      : never;
+};
+
+export type WatchableXStateApi = Pick<
+  NoContextActorObjectHandlers<ActorObjectHandlers<AnyStateMachine>>,
+  "send" | "snapshot" | "hasTag"
+>;
+
+export type WatchCondition = "final" | "tagObserved" | "tagCleared" | "result";
+export enum ValidWatchCondition {
+  "final",
+  "tagObserved",
+  "tagCleared",
+  "result"
+}
+export type WatchEvent = {
+  event: string;
+  condition?: WatchCondition;
+  observeTag?: string;
+  resultKey?: string;
+};
+
+export type WatcherDefaults = {
+  events?: WatchEvent[];
+  intervalMs?: number;
+  timeoutMs?: number;
+};
+
+export type WatchRequest = {
+  objectName: string;
+  objectId: string;
+  event: {
+    type: string;
+  };
+  until?: WatchEvent;
+  intervalMs?: number;
+  timeoutMs?: number;
+};
+
+export type WaitForRequest = {
+  condition: WatchCondition;
+  observeTag?: string;
+  resultKey?: string;
+  intervalMs?: number;
+  timeoutMs?: number;
+};
+
+export type WatchResult = {
+  timedOut: boolean;
+  waitedMs: number;
+  result?: unknown;
+  error?: Error;
+};
