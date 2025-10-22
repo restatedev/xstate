@@ -1,8 +1,12 @@
 import type {
+  Actor,
   ActorSystemInfo,
+  AnyActorLogic,
   AnyEventObject,
+  AnyMachineSnapshot,
   AnyStateMachine,
   InputFrom,
+  Observer,
   PromiseActorLogic,
   Snapshot,
 } from "xstate";
@@ -19,6 +23,9 @@ import type {
   SerialisableScheduledEvent,
   XStateApi,
   ActorObjectHandlers,
+  Condition,
+  Subscription,
+  SnapshotWithTags,
 } from "./types.js";
 import { resolveReferencedActor } from "./utils.js";
 import { createActor } from "./createActor.js";
@@ -95,6 +102,7 @@ export function actorObject<
         ctx.clear("events");
         ctx.clear("children");
         ctx.clear("disposed");
+        ctx.clear("subscriptions");
 
         const version = await getOrSetVersion(ctx, latestLogic.id);
         const logic = getLogic(
@@ -103,16 +111,15 @@ export function actorObject<
           version,
         ) as LatestStateMachine;
 
-        const root = (
-          await createActor(ctx, api, systemName, version, logic, {
-            input: {
-              ...(request?.input ?? {}),
-            } as InputFrom<LatestStateMachine>,
-          })
-        ).start();
+        const root = await createActor(ctx, api, systemName, version, logic, {
+          input: {
+            ...(request?.input ?? {}),
+          } as InputFrom<LatestStateMachine>,
+        });
 
-        const snapshot = root.getPersistedSnapshot();
-        ctx.set("snapshot", snapshot);
+        root.start();
+
+        ctx.set("snapshot", root.getPersistedSnapshot());
 
         await checkIfStateMachineShouldBeDisposed(
           ctx,
@@ -121,7 +128,7 @@ export function actorObject<
           options?.finalStateTTL,
         );
 
-        return snapshot;
+        return persistedSnapshotWithTags(root);
       },
       send: async (
         ctx: restate.ObjectContext<State>,
@@ -171,15 +178,19 @@ export function actorObject<
           ctx.set("events", events);
         }
 
-        const root = (
-          await createActor<PreviousStateMachine | LatestStateMachine>(
+        const root = await createActor<
+          PreviousStateMachine | LatestStateMachine
+        >(ctx, api, systemName, version, logic);
+
+        root.subscribe(
+          new ConditionObserver(
             ctx,
-            api,
-            systemName,
-            version,
-            logic,
-          )
-        ).start();
+            root,
+            (await ctx.get("subscriptions")) ?? {},
+          ),
+        );
+
+        root.start();
 
         let actor;
         if (request.target) {
@@ -201,8 +212,7 @@ export function actorObject<
           request.event,
         );
 
-        const nextSnapshot = root.getPersistedSnapshot();
-        ctx.set("snapshot", nextSnapshot);
+        ctx.set("snapshot", root.getPersistedSnapshot());
 
         await checkIfStateMachineShouldBeDisposed(
           ctx,
@@ -211,11 +221,93 @@ export function actorObject<
           options?.finalStateTTL,
         );
 
-        return nextSnapshot;
+        return persistedSnapshotWithTags(root);
       },
+      subscribe: async (
+        ctx: restate.ObjectContext<State>,
+        request: { condition: string; awakeableId: string },
+      ): Promise<void> => {
+        await validateStateMachineIsNotDisposed(ctx);
+        validateCondition(request.condition);
+
+        const systemName = ctx.key;
+
+        // no need to set the version here if we are just getting a snapshot
+        let version = await ctx.get("version");
+        if (version == null) {
+          version = latestLogic.id;
+        }
+        const logic = getLogic(latestLogic, versions, version);
+
+        const root = await createActor<
+          LatestStateMachine | PreviousStateMachine
+        >(ctx, api, systemName, version, logic);
+
+        if (
+          evaluateCondition(ctx, root, request.condition, [request.awakeableId])
+        ) {
+          // the condition is already met
+          return;
+        }
+
+        const subscriptions = (await ctx.get("subscriptions")) ?? {};
+
+        if (subscriptions[request.condition]) {
+          subscriptions[request.condition]?.awakeables.push(
+            request.awakeableId,
+          );
+        } else {
+          subscriptions[request.condition] = {
+            awakeables: [request.awakeableId],
+          };
+        }
+
+        ctx.set("subscriptions", subscriptions);
+      },
+      waitFor: restate.handlers.object.shared(
+        async (
+          ctx: restate.ObjectSharedContext<State>,
+          request: { condition: Condition; timeout?: number },
+        ) => {
+          await validateStateMachineIsNotDisposed(ctx);
+          const systemName = ctx.key;
+
+          const { id, promise } = ctx.awakeable<Snapshot<unknown>>();
+
+          ctx
+            .objectSendClient<
+              ActorObjectHandlers<LatestStateMachine>
+            >(api, systemName)
+            .subscribe({
+              condition: request.condition,
+              awakeableId: id,
+            });
+
+          try {
+            if (request.timeout !== undefined) {
+              return await promise.orTimeout(request.timeout);
+            } else {
+              return await promise;
+            }
+          } catch (e) {
+            if (!(e instanceof restate.TerminalError)) {
+              // pass through transient errors
+              throw e;
+            }
+
+            if (e.code != 500) {
+              // errors that aren't from the awakeable being rejected, eg cancellation, timeout
+              throw e;
+            }
+
+            // awakeable rejection, return http 412 so that clients know this is non-transient
+            throw new restate.TerminalError(e.message, { errorCode: 412 });
+          }
+        },
+      ),
       snapshot: async (
         ctx: restate.ObjectContext<State>,
-      ): Promise<Snapshot<unknown>> => {
+      ): Promise<SnapshotWithTags> => {
         await validateStateMachineIsNotDisposed(ctx);
         const systemName = ctx.key;
 
@@ -230,7 +322,7 @@ export function actorObject<
           LatestStateMachine | PreviousStateMachine
         >(ctx, api, systemName, version, logic);
 
-        return root.getPersistedSnapshot();
+        return persistedSnapshotWithTags(root);
       },
       invokePromise: restate.handlers.object.shared(
         async (
@@ -370,4 +462,104 @@ export function actorObject<
       ),
     },
   });
+}
+
+function persistedSnapshotWithTags(
+  actor: Actor<AnyActorLogic>,
+): SnapshotWithTags {
+  const snapshot = actor.getPersistedSnapshot();
+  const tags = [...(actor.getSnapshot() as AnyMachineSnapshot).tags];
+  tags.sort();
+
+  return {
+    ...snapshot,
+    tags,
+  };
+}
+
+function validateCondition(condition: string): asserts condition is Condition {
+  if (condition === "done") return;
+  if (condition.startsWith("hasTag:")) return;
+  throw new restate.TerminalError("Invalid subscription condition", {
+    errorCode: 400,
+  });
+}
+
+function evaluateCondition(
+  ctx: restate.ObjectContext<State>,
+  actor: Actor<AnyActorLogic>,
+  condition: Condition,
+  awakeables: string[],
+): boolean {
+  const snapshot = actor.getSnapshot() as AnyMachineSnapshot;
+
+  if (snapshot.status === "error") {
+    awakeables.forEach((awakeable) => {
+      ctx.rejectAwakeable(awakeable, `State machine returned an error`);
+    });
+    return true;
+  }
+
+  if (snapshot.status === "done") {
+    if (condition === "done") {
+      awakeables.forEach((awakeable) => {
+        ctx.resolveAwakeable(awakeable, persistedSnapshotWithTags(actor));
+      });
+    } else {
+      awakeables.forEach((awakeable) => {
+        ctx.rejectAwakeable(
+          awakeable,
+          `State machine completed without the condition being met`,
+        );
+      });
+    }
+
+    return true;
+  }
+
+  if (condition.startsWith("hasTag:") && snapshot.hasTag(condition.slice(7))) {
+    awakeables.forEach((awakeable) => {
+      ctx.resolveAwakeable(awakeable, persistedSnapshotWithTags(actor));
+    });
+    return true;
+  }
+
+  return false;
+}
+
+class ConditionObserver implements Observer<AnyMachineSnapshot> {
+  constructor(
+    private readonly ctx: restate.ObjectContext<State>,
+    private readonly actor: Actor<AnyActorLogic>,
+    private readonly subscriptions: {
+      [condition: string]: Subscription;
+    },
+  ) {}
+
+  next() {
+    this.evaluate();
+  }
+
+  error() {
+    this.evaluate();
+  }
+
+  evaluate() {
+    for (const [condition, subscription] of Object.entries(
+      this.subscriptions,
+    )) {
+      if (
+        evaluateCondition(
+          this.ctx,
+          this.actor,
+          condition as Condition,
+          subscription.awakeables,
+        )
+      ) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete this.subscriptions[condition];
+        this.ctx.set("subscriptions", this.subscriptions);
+      }
+    }
+  }
 }

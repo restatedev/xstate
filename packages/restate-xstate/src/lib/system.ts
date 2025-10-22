@@ -98,7 +98,6 @@ export async function createSystem<T extends ActorSystemInfo>(
         event,
         delay,
         id,
-        startedAt: Date.now(),
         uuid: ctx.rand.uuidv4(),
       };
       const scheduledEventId = createScheduledEventId(source, id);
