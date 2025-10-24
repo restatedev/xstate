@@ -89,6 +89,10 @@ export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
       scheduledEvent?: SerialisableScheduledEvent;
       source?: SerialisableActorRef;
       target?: SerialisableActorRef;
+      subscribe?: {
+        condition: string;
+        awakeableId: string;
+      };
       event: AnyEventObject;
     },
   ) => Promise<SnapshotWithTags | undefined>;

@@ -97,14 +97,18 @@ It is helpful to be able to subscribe to the state machine to wait for relevant 
 In native xstate this would be done with the `subscribe` method and the `waitFor` function.
 In the Restate integration we expose a similar mechanism via the `waitFor` handler.
 
-`waitFor` accepts two parameters, `condition`, which describes what you're waiting for, and an optional `timeout` parameter which is how many milliseconds to wait before returning an error (HTTP 408) to the caller.
-The `condition` parameter currently accepts either `done`, which is met if the state machine enters a state with `type: "final"`, or `hasTag:${tag}`, which is met if the state machine enters a state with that tag.
+`waitFor` accepts three parameters:
+- `condition`; what you're waiting for. This accepts either `done`, which is met if the state machine enters a state with `type: "final"`, or `hasTag:${tag}`, which is met if the state machine enters a state with that tag.
+- `timeout`; optionally, how many milliseconds to wait before returning an error (HTTP 408) to the caller
+- `event`; optionally, an event to process immediately after creating the subscription, equivalent to the same parameter on the `send` handler.
+
 When the condition is met, the waitFor request returns with the snapshot of the state machine that met the condition.
 If the state machine completes or enters an error state without the condition being met, `waitFor` returns an error (HTTP 412).
 
 To safely watch for a change from HTTP clients, its best to use idempotent invocations.
 These allow for interrupted HTTP requests to `waitFor` to be resumed by simply making the request again with the same idempotency key, without having to initiate a new `waitFor` invocation (in which case, you might miss a state change in the gap between the two requests).
 This means that even if your wait time exceeds HTTP response timeouts, you can safely keep long-polling for completion.
+A HTTP 5xx can be treated as retryable.
 
 For example:
 
@@ -118,11 +122,9 @@ restate dep register http://localhost:9080
 
 # create a state machine
 curl http://localhost:8080/auth/myMachine/create
-# create a waitFor invocation which waits for the machine to complete
-curl http://localhost:8080/auth/myMachine/waitFor --json '{"condition": "done"}' -H "idempotency-key: my-key"
-# kick off the machine in another window
-curl http://localhost:8080/auth/myMachine/send --json '{"event": {"type": "AUTH"}}'
+# create a waitFor invocation which waits for the machine to complete, and atomically kick off the auth flow
+curl http://localhost:8080/auth/myMachine/waitFor --json '{"condition": "done", "event": {"type": "AUTH"}}' -H "idempotency-key: my-key"
 # and watch the waitFor call eventually complete!
 # you can even call it again afterwards; the original result will be cached for the idempotency retention period
-curl http://localhost:8080/auth/myMachine/waitFor --json '{"condition": "done"}' -H "idempotency-key: my-key"
+curl http://localhost:8080/auth/myMachine/waitFor --json '{"condition": "done", "event": {"type": "AUTH"}}' -H "idempotency-key: my-key"
 ```

@@ -136,6 +136,7 @@ export function actorObject<
           scheduledEvent?: SerialisableScheduledEvent;
           source?: SerialisableActorRef;
           target?: SerialisableActorRef;
+          subscribe?: { condition: string; awakeableId: string };
           event: AnyEventObject;
         },
       ): Promise<Snapshot<unknown> | undefined> => {
@@ -182,13 +183,28 @@ export function actorObject<
           PreviousStateMachine | LatestStateMachine
         >(ctx, api, systemName, version, logic);
 
-        root.subscribe(
-          new ConditionObserver(
-            ctx,
-            root,
-            (await ctx.get("subscriptions")) ?? {},
-          ),
-        );
+        const subscriptions = (await ctx.get("subscriptions")) ?? {};
+
+        if (
+          request.subscribe &&
+          !evaluateCondition(ctx, root, request.subscribe.condition, [
+            request.subscribe.awakeableId,
+          ])
+        ) {
+          if (subscriptions[request.subscribe.condition]) {
+            subscriptions[request.subscribe.condition]?.awakeables.push(
+              request.subscribe.awakeableId,
+            );
+          } else {
+            subscriptions[request.subscribe.condition] = {
+              awakeables: [request.subscribe.awakeableId],
+            };
+          }
+
+          ctx.set("subscriptions", subscriptions);
+        }
+
+        root.subscribe(new ConditionObserver(ctx, root, subscriptions));
 
         root.start();
 
@@ -228,11 +244,10 @@ export function actorObject<
         request: { condition: string; awakeableId: string },
       ): Promise<void> => {
         await validateStateMachineIsNotDisposed(ctx);
-        validateCondition(request.condition);
 
         const systemName = ctx.key;
 
-        // no need to set the version here if we are just getting a snapshot
+        // no need to set the version here if we are just reading
         let version = await ctx.get("version");
         if (version == null) {
           version = latestLogic.id;
@@ -267,21 +282,41 @@ export function actorObject<
       waitFor: restate.handlers.object.shared(
         async (
           ctx: restate.ObjectSharedContext<State>,
-          request: { condition: Condition; timeout?: number },
+          request: {
+            condition: Condition;
+            timeout?: number;
+            event?: AnyEventObject;
+          },
         ) => {
           await validateStateMachineIsNotDisposed(ctx);
+          validateCondition(request.condition);
+
           const systemName = ctx.key;
 
           const { id, promise } = ctx.awakeable<Snapshot<unknown>>();
 
-          ctx
-            .objectSendClient<
-              ActorObjectHandlers<LatestStateMachine>
-            >(api, systemName)
-            .subscribe({
-              condition: request.condition,
-              awakeableId: id,
-            });
+          if (request.event) {
+            ctx
+              .objectSendClient<
+                ActorObjectHandlers<LatestStateMachine | PreviousStateMachine>
+              >(api, systemName)
+              .send({
+                subscribe: {
+                  condition: request.condition,
+                  awakeableId: id,
+                },
+                event: request.event,
+              });
+          } else {
+            ctx
+              .objectSendClient<
+                ActorObjectHandlers<LatestStateMachine | PreviousStateMachine>
+              >(api, systemName)
+              .subscribe({
+                condition: request.condition,
+                awakeableId: id,
+              });
+          }
 
           try {
             if (request.timeout !== undefined) {
@@ -488,7 +523,7 @@ function validateCondition(condition: string): asserts condition is Condition {
 function evaluateCondition(
   ctx: restate.ObjectContext<State>,
   actor: Actor<AnyActorLogic>,
-  condition: Condition,
+  condition: string,
   awakeables: string[],
 ): boolean {
   const snapshot = actor.getSnapshot() as AnyMachineSnapshot;
