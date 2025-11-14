@@ -118,8 +118,9 @@ export function actorObject<
         });
 
         root.start();
+        const snapshot = root.getPersistedSnapshot();
 
-        ctx.set("snapshot", root.getPersistedSnapshot());
+        ctx.set("snapshot", snapshot);
 
         await checkIfStateMachineShouldBeDisposed(
           ctx,
@@ -128,7 +129,7 @@ export function actorObject<
           options?.finalStateTTL,
         );
 
-        return persistedSnapshotWithTags(root);
+        return persistedSnapshotWithTags(root, snapshot);
       },
       send: async (
         ctx: restate.ObjectContext<State>,
@@ -501,8 +502,9 @@ export function actorObject<
 
 function persistedSnapshotWithTags(
   actor: Actor<AnyActorLogic>,
+  persistedSnapshot?: Snapshot<unknown>,
 ): SnapshotWithTags {
-  const snapshot = actor.getPersistedSnapshot();
+  const snapshot = persistedSnapshot ?? actor.getPersistedSnapshot();
   const tags = [...(actor.getSnapshot() as AnyMachineSnapshot).tags];
   tags.sort();
 

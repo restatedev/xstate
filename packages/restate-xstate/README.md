@@ -98,6 +98,7 @@ In native xstate this would be done with the `subscribe` method and the `waitFor
 In the Restate integration we expose a similar mechanism via the `waitFor` handler.
 
 `waitFor` accepts three parameters:
+
 - `condition`; what you're waiting for. This accepts either `done`, which is met if the state machine enters a state with `type: "final"`, or `hasTag:${tag}`, which is met if the state machine enters a state with that tag.
 - `timeout`; optionally, how many milliseconds to wait before returning an error (HTTP 408) to the caller
 - `event`; optionally, an event to process immediately after creating the subscription, equivalent to the same parameter on the `send` handler.
