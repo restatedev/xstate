@@ -537,6 +537,13 @@ function evaluateCondition(
     return true;
   }
 
+  if (condition.startsWith("hasTag:") && snapshot.hasTag(condition.slice(7))) {
+    awakeables.forEach((awakeable) => {
+      ctx.resolveAwakeable(awakeable, persistedSnapshotWithTags(actor));
+    });
+    return true;
+  }
+
   if (snapshot.status === "done") {
     if (condition === "done") {
       awakeables.forEach((awakeable) => {
@@ -551,13 +558,6 @@ function evaluateCondition(
       });
     }
 
-    return true;
-  }
-
-  if (condition.startsWith("hasTag:") && snapshot.hasTag(condition.slice(7))) {
-    awakeables.forEach((awakeable) => {
-      ctx.resolveAwakeable(awakeable, persistedSnapshotWithTags(actor));
-    });
     return true;
   }
 
