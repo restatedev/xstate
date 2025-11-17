@@ -192,10 +192,10 @@ export function actorObject<
             request.subscribe.awakeableId,
           ])
         ) {
-          if (subscriptions[request.subscribe.condition]) {
-            subscriptions[request.subscribe.condition]?.awakeables.push(
-              request.subscribe.awakeableId,
-            );
+          const existingSubscription =
+            subscriptions[request.subscribe.condition];
+          if (existingSubscription) {
+            existingSubscription.awakeables.push(request.subscribe.awakeableId);
           } else {
             subscriptions[request.subscribe.condition] = {
               awakeables: [request.subscribe.awakeableId],
@@ -268,10 +268,9 @@ export function actorObject<
 
         const subscriptions = (await ctx.get("subscriptions")) ?? {};
 
-        if (subscriptions[request.condition]) {
-          subscriptions[request.condition]?.awakeables.push(
-            request.awakeableId,
-          );
+        const existingSubscription = subscriptions[request.condition];
+        if (existingSubscription) {
+          existingSubscription.awakeables.push(request.awakeableId);
         } else {
           subscriptions[request.condition] = {
             awakeables: [request.awakeableId],
@@ -538,16 +537,18 @@ function evaluateCondition(
   }
 
   if (condition.startsWith("hasTag:") && snapshot.hasTag(condition.slice(7))) {
+    const persistedSnapshot = persistedSnapshotWithTags(actor);
     awakeables.forEach((awakeable) => {
-      ctx.resolveAwakeable(awakeable, persistedSnapshotWithTags(actor));
+      ctx.resolveAwakeable(awakeable, persistedSnapshot);
     });
     return true;
   }
 
   if (snapshot.status === "done") {
     if (condition === "done") {
+      const persistedSnapshot = persistedSnapshotWithTags(actor);
       awakeables.forEach((awakeable) => {
-        ctx.resolveAwakeable(awakeable, persistedSnapshotWithTags(actor));
+        ctx.resolveAwakeable(awakeable, persistedSnapshot);
       });
     } else {
       awakeables.forEach((awakeable) => {

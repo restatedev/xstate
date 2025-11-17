@@ -110,6 +110,7 @@ To safely watch for a change from HTTP clients, its best to use idempotent invoc
 These allow for interrupted HTTP requests to `waitFor` to be resumed by simply making the request again with the same idempotency key, without having to initiate a new `waitFor` invocation (in which case, you might miss a state change in the gap between the two requests).
 This means that even if your wait time exceeds HTTP response timeouts, you can safely keep long-polling for completion.
 A HTTP 5xx can be treated as retryable.
+If you don't provide an idempotency key, each call to waitFor will create a new awakeable and save it in state.
 
 For example:
 
