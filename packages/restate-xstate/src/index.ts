@@ -16,6 +16,9 @@ export type {
   XStateApi,
   ActorObject,
   ActorObjectHandlers,
+  SnapshotWithTags,
+  Subscription,
+  Condition,
 } from "./lib/types.js";
 /**
  * @deprecated Please import from `@restatedev/xstate/promise`

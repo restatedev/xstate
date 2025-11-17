@@ -32,7 +32,6 @@ export type PromiseCreator<TOutput, TInput extends NonReducibleUnknown> = ({
 export type SerialisableScheduledEvent = {
   id: string;
   event: EventObject;
-  startedAt: number;
   delay: number;
   source: SerialisableActorRef;
   target: SerialisableActorRef;
@@ -46,7 +45,18 @@ export type State = {
   snapshot: Snapshot<unknown>;
   /** Indicates whether a state machine has been disposed/cleaned after reaching it's final state */
   disposed: boolean;
+  subscriptions: {
+    [condition: string]: Subscription;
+  };
 };
+
+export type Condition = "done" | `hasTag:${string}`;
+
+export interface Subscription {
+  awakeables: string[];
+}
+
+export type SnapshotWithTags = Snapshot<unknown> & { tags: string[] };
 
 export interface ActorEventSender<TLogic extends AnyActorLogic>
   extends Actor<TLogic> {
@@ -72,17 +82,36 @@ export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
     request?: {
       input?: InputFrom<LatestStateMachine>;
     },
-  ) => Promise<Snapshot<unknown>>;
+  ) => Promise<SnapshotWithTags>;
   send: (
     ctx: ObjectContext<State>,
     request?: {
       scheduledEvent?: SerialisableScheduledEvent;
       source?: SerialisableActorRef;
       target?: SerialisableActorRef;
+      subscribe?: {
+        condition: string;
+        awakeableId: string;
+      };
       event: AnyEventObject;
     },
-  ) => Promise<Snapshot<unknown> | undefined>;
-  snapshot: (ctx: ObjectContext<State>) => Promise<Snapshot<unknown>>;
+  ) => Promise<SnapshotWithTags | undefined>;
+  subscribe: (
+    ctx: ObjectContext<State>,
+    request: {
+      condition: string;
+      awakeableId: string;
+    },
+  ) => Promise<void>;
+  waitFor: (
+    ctx: ObjectSharedContext<State>,
+    request: {
+      condition: Condition;
+      timeout?: number;
+      event?: AnyEventObject;
+    },
+  ) => Promise<SnapshotWithTags>;
+  snapshot: (ctx: ObjectContext<State>) => Promise<SnapshotWithTags>;
   cleanupState: (ctx: ObjectContext<State>) => Promise<void>;
   invokePromise: (
     ctx: ObjectSharedContext<State>,
