@@ -106,8 +106,9 @@ export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
   waitFor: (
     ctx: ObjectSharedContext<State>,
     request: {
-      condition: string;
+      condition: Condition;
       timeout?: number;
+      event?: AnyEventObject;
     },
   ) => Promise<SnapshotWithTags>;
   snapshot: (ctx: ObjectContext<State>) => Promise<SnapshotWithTags>;
