@@ -1,5 +1,16 @@
 # @restatedev/xstate-test
 
+## 1.0.0
+
+### Minor Changes
+
+- Add a `waitFor` handler
+
+### Patch Changes
+
+- Updated dependencies
+  - @restatedev/xstate@0.4.0
+
 ## 0.3.1
 
 ### Patch Changes
