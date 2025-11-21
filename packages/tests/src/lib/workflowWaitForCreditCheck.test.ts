@@ -104,6 +104,7 @@ export const workflow = setup({
       invoke: {
         src: "callCreditCheckMicroservice",
         input: ({ context }) => ({
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           customer: context.customer!,
         }),
         onDone: {
@@ -138,6 +139,7 @@ export const workflow = setup({
       invoke: {
         src: "startApplicationWorkflowId",
         input: ({ context }) => ({
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           customer: context.customer!,
         }),
         onDone: {
@@ -149,6 +151,7 @@ export const workflow = setup({
       invoke: {
         src: "sendRejectionEmailFunction",
         input: ({ context }) => ({
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           applicant: context.customer!,
         }),
         onDone: {
