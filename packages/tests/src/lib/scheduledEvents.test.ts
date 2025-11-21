@@ -68,7 +68,7 @@ describe("Scheduled events", () => {
         scheduleStart: sendTo(
           "task",
           { type: "START" },
-          { delay: 100, id: "startDelay" },
+          { delay: 1000, id: "startDelay" },
         ),
         cancelStart: cancel("startDelay"),
       },
@@ -117,9 +117,9 @@ describe("Scheduled events", () => {
       value: "pending",
     });
 
-    await wait(50);
+    await wait(500);
     expect(executor).not.toHaveBeenCalled();
-    await wait(50);
+    await wait(500);
 
     await vi.waitFor(() => {
       expect(executor).toHaveBeenCalledTimes(1);
@@ -142,10 +142,10 @@ describe("Scheduled events", () => {
       value: "pending",
     });
 
-    await wait(50);
+    await wait(500);
     expect(executor).not.toHaveBeenCalled();
     await actor.send({ type: "CANCEL" });
-    await wait(50);
+    await wait(500);
 
     expect(executor).not.toHaveBeenCalled();
   });
