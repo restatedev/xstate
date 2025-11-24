@@ -5,7 +5,7 @@ import {
 } from "./lib/promise.js";
 
 export { xstate } from "./lib/xstate.js";
-export type { FromPromise } from "./lib/promise.js";
+export type { FromPromise, FromPromiseOpts } from "./lib/promise.js";
 export type { PromiseActorLogic, PromiseSnapshot } from "./lib/promise.js";
 export type {
   PromiseCreator,

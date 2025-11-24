@@ -130,3 +130,33 @@ curl http://localhost:8080/auth/myMachine/waitFor --json '{"condition": "done", 
 # you can even call it again afterwards; the original result will be cached for the idempotency retention period
 curl http://localhost:8080/auth/myMachine/waitFor --json '{"condition": "done", "event": {"type": "AUTH"}}' -H "idempotency-key: my-key"
 ```
+
+## fromPromise retries
+
+You can provide `{retry: true}`, or use the helper `fromPromiseWithRetry`, to execute the `fromPromise` actor with Restate's retry policy enabled; without this flag, any error will simply report back to the state machine, which matches native xstate behaviour.
+The retry policy will default to what is set on the server (by default, to retry forever), unless the `promiseRetryPolicy` option was provided to the `xstate` function when the handler was registered. Both 'pause' and 'kill' behaviour is supported when the retry limit is exceeded.
+Errors that are known to be non-retryable should be thrown as `restate.TerminalError` so they are not unnecessarily retried.
+
+For example:
+
+```ts
+{
+  actors: {
+    authorise: fromPromise(
+      async () => {
+        if (Math.random() < 0.5) {
+          // a transient error
+          throw new Error("internal server error");
+        }
+
+        if (Math.random() > 0.9) {
+          // a permanent error
+          throw new restate.TerminalError("invalid parameter");
+        }
+      },
+      // the promise will be retried until it succeeds or a terminal error is thrown
+      { retry: true },
+    ),
+  },
+},
+```

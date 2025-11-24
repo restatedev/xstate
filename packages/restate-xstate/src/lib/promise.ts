@@ -44,8 +44,16 @@ export type FromPromise<TOutput, TInput extends NonReducibleUnknown> = (
   promiseCreator: PromiseCreator<TOutput, TInput>,
 ) => PromiseActorLogic<TOutput, TInput>;
 
+export type FromPromiseOpts = {
+  // Use Restate's builtin retry functionality to retry this promise.
+  // Non-retryable errors can be thrown with `new restate.TerminalError(...)`.
+  // The retry policy for the invokePromise handler can be configured in `XStateOptions`.
+  retry?: boolean;
+};
+
 export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
   promiseCreator: PromiseCreator<TOutput, TInput>,
+  opts?: FromPromiseOpts,
 ): ReturnType<FromPromise<TOutput, TInput>> {
   const logic: PromiseActorLogic<TOutput, TInput> = {
     sentinel: "restate.promise.actor",
@@ -99,17 +107,29 @@ export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
 
       const rs = system as RestateActorSystem<ActorSystemInfo>;
 
-      // use an unawaited promise so the trace id stays the same
-      void rs.ctx
-        .objectClient<
-          ActorObjectHandlers<AnyStateMachine>
-        >(rs.api, rs.systemName)
-        .invokePromise({
-          self: serialiseActorRef(self),
-          srcs: actorSrc(self),
-          input: state.input,
-          version: rs.version,
-        });
+      if (opts?.retry) {
+        void rs.ctx
+          .objectClient<
+            ActorObjectHandlers<AnyStateMachine>
+          >(rs.api, rs.systemName)
+          .invokePromiseRetry({
+            self: serialiseActorRef(self),
+            srcs: actorSrc(self),
+            input: state.input,
+            version: rs.version,
+          });
+      } else {
+        void rs.ctx
+          .objectClient<
+            ActorObjectHandlers<AnyStateMachine>
+          >(rs.api, rs.systemName)
+          .invokePromise({
+            self: serialiseActorRef(self),
+            srcs: actorSrc(self),
+            input: state.input,
+            version: rs.version,
+          });
+      }
 
       // note that we sent off the promise so we don't do it again
       rs._relay(self, self as ActorRefEventSender, {
@@ -131,6 +151,19 @@ export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
   };
 
   return logic;
+}
+
+export function fromPromiseWithRetry<
+  TOutput,
+  TInput extends NonReducibleUnknown,
+>(
+  promiseCreator: PromiseCreator<TOutput, TInput>,
+  opts?: FromPromiseOpts,
+): ReturnType<FromPromise<TOutput, TInput>> {
+  return fromPromise(promiseCreator, {
+    ...opts,
+    retry: opts?.retry ?? true,
+  });
 }
 
 function actorSrc(actor?: AnyActorRef): string[] {

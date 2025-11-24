@@ -2,6 +2,7 @@ import type {
   ObjectContext,
   ObjectSharedContext,
   VirtualObjectDefinition,
+  RetryPolicy,
 } from "@restatedev/restate-sdk";
 import type {
   Actor,
@@ -74,6 +75,11 @@ export interface XStateOptions<PreviousStateMachine extends AnyStateMachine> {
    * @default Infinity
    * */
   finalStateTTL?: number;
+
+  /**
+   * The retry policy to apply to the `invokePromise` handler. `fromPromise` actors are only retried if `{ retry: true }` is provided as an option.
+   */
+  promiseRetryPolicy?: RetryPolicy;
 }
 
 export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
@@ -113,7 +119,7 @@ export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
   ) => Promise<SnapshotWithTags>;
   snapshot: (ctx: ObjectContext<State>) => Promise<SnapshotWithTags>;
   cleanupState: (ctx: ObjectContext<State>) => Promise<void>;
-  invokePromise: (
+  invokePromiseRetry: (
     ctx: ObjectSharedContext<State>,
     input: {
       self: SerialisableActorRef;
@@ -122,6 +128,15 @@ export type ActorObjectHandlers<LatestStateMachine extends AnyStateMachine> = {
       version?: string;
     },
   ) => Promise<void>;
+  invokePromise: (
+    ctx: ObjectSharedContext<State>,
+    input: {
+      self?: SerialisableActorRef;
+      srcs: string[];
+      input: unknown;
+      version?: string;
+    },
+  ) => Promise<unknown>;
 };
 
 export type ActorObject<
