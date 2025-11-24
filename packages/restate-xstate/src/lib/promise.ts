@@ -45,7 +45,7 @@ export type FromPromise<TOutput, TInput extends NonReducibleUnknown> = (
 ) => PromiseActorLogic<TOutput, TInput>;
 
 export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
-  promiseCreator: Parameters<FromPromise<TOutput, TInput>>[0],
+  promiseCreator: PromiseCreator<TOutput, TInput>,
 ): ReturnType<FromPromise<TOutput, TInput>> {
   const logic: PromiseActorLogic<TOutput, TInput> = {
     sentinel: "restate.promise.actor",
@@ -99,8 +99,9 @@ export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
 
       const rs = system as RestateActorSystem<ActorSystemInfo>;
 
-      rs.ctx
-        .objectSendClient<
+      // use an unawaited promise so the trace id stays the same
+      void rs.ctx
+        .objectClient<
           ActorObjectHandlers<AnyStateMachine>
         >(rs.api, rs.systemName)
         .invokePromise({
