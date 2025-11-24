@@ -296,8 +296,9 @@ export function actorObject<
           const { id, promise } = ctx.awakeable<Snapshot<unknown>>();
 
           if (request.event) {
-            ctx
-              .objectSendClient<
+            // we use an unawaited promise so the trace id stays the same
+            void ctx
+              .objectClient<
                 ActorObjectHandlers<LatestStateMachine | PreviousStateMachine>
               >(api, systemName)
               .send({
@@ -308,8 +309,8 @@ export function actorObject<
                 event: request.event,
               });
           } else {
-            ctx
-              .objectSendClient<
+            void ctx
+              .objectClient<
                 ActorObjectHandlers<LatestStateMachine | PreviousStateMachine>
               >(api, systemName)
               .subscribe({
@@ -455,10 +456,11 @@ export function actorObject<
             }),
           );
 
+          // we use unawaited promises so the trace id stays the same
           await resolvedPromise.then(
             (response) => {
-              ctx
-                .objectSendClient<
+              void ctx
+                .objectClient<
                   ActorObjectHandlers<LatestStateMachine>
                 >(api, systemName)
                 .send({
@@ -471,8 +473,8 @@ export function actorObject<
                 });
             },
             (errorData: unknown) => {
-              ctx
-                .objectSendClient<
+              void ctx
+                .objectClient<
                   ActorObjectHandlers<LatestStateMachine>
                 >(api, systemName)
                 .send({
