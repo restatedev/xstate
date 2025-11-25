@@ -7,14 +7,14 @@ settings:
 catalogs:
   default:
     '@restatedev/restate-sdk':
-      specifier: ^1.8.0
-      version: 1.8.0
+      specifier: ^1.9.0
+      version: 1.9.1
     '@restatedev/restate-sdk-clients':
-      specifier: ^1.8.0
-      version: 1.8.0
+      specifier: ^1.9.0
+      version: 1.9.1
     '@restatedev/restate-sdk-testcontainers':
-      specifier: ^1.8.0
-      version: 1.8.0
+      specifier: ^1.9.0
+      version: 1.9.1
     xstate:
       specifier: ^5.20.1
       version: 5.20.1
@@ -95,7 +95,7 @@ importers:
     dependencies:
       '@restatedev/restate-sdk':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
       '@restatedev/xstate':
         specifier: workspace:*
         version: link:../restate-xstate
@@ -105,35 +105,35 @@ importers:
     devDependencies:
       '@restatedev/restate-sdk-testcontainers':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
 
   packages/restate-xstate:
     dependencies:
       '@restatedev/restate-sdk':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
       xstate:
         specifier: 'catalog:'
         version: 5.20.1
     devDependencies:
       '@restatedev/restate-sdk-clients':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
       '@restatedev/restate-sdk-testcontainers':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
 
   packages/restate-xstate-test:
     dependencies:
       '@restatedev/restate-sdk':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
       '@restatedev/restate-sdk-clients':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
       '@restatedev/restate-sdk-testcontainers':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
       '@restatedev/xstate':
         specifier: workspace:^
         version: link:../restate-xstate
@@ -145,13 +145,13 @@ importers:
     dependencies:
       '@restatedev/restate-sdk':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
       '@restatedev/restate-sdk-clients':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
       '@restatedev/restate-sdk-testcontainers':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.9.1
       '@restatedev/xstate':
         specifier: workspace:*
         version: link:../restate-xstate
@@ -628,21 +628,21 @@ packages:
     resolution: {integrity: sha512-G0OnZbMWEs5LhDyqy2UL17vGhSVHkQIfVojMtEWVenvj0V5S84VBgy86kJIuNsGDp2p7sTKlpSIpBUWdC35OKg==}
     engines: {node: '>=20.0.0'}
 
-  '@restatedev/restate-sdk-clients@1.8.0':
-    resolution: {integrity: sha512-TT2lZwYC1mXNFkWHcLNdHiBHOPqZ7hpq+sfNF+vEel8Fyym+5ZHBts0VWyQCm5hDvozeawmGqEVusReYUN3Eww==}
-    engines: {node: '>= 18.13'}
+  '@restatedev/restate-sdk-clients@1.9.1':
+    resolution: {integrity: sha512-dOZVBDVvjK8SwgTPwMM5UYYXTU+8BHk4D9QTtDUYca/lOgVAIHoQEPy5e50UJ+/cCo6NouD9lmIC+6qKbN3dsA==}
+    engines: {node: '>= 20.19'}
 
-  '@restatedev/restate-sdk-core@1.8.0':
-    resolution: {integrity: sha512-sDESbv18lQQ/rSIDJkxIorJEgcIzsdUYRXItR1KItYsSeU3LD9aSkwt3WCd9XKaUQiCulBRzlC4qHlkTuBUuOQ==}
-    engines: {node: '>= 18.13'}
+  '@restatedev/restate-sdk-core@1.9.1':
+    resolution: {integrity: sha512-/ISSWBF0YAH0mhIhnd6VFuFLMp6AckdfGyfU+CdJDccysxH1qp0QuI5oJ5UArexoFTI6LXrWkYg2/nZebO96gA==}
+    engines: {node: '>= 20.19'}
 
-  '@restatedev/restate-sdk-testcontainers@1.8.0':
-    resolution: {integrity: sha512-OONYFygFYhG5p8Ac9xm3sg4Hqj/TlUYvSF9u4Dq2xFXIGX6jnNTH3zPvo2/+5WXJFr2l8ebuIyd4X0g2K+3viw==}
-    engines: {node: '>= 18.13'}
+  '@restatedev/restate-sdk-testcontainers@1.9.1':
+    resolution: {integrity: sha512-10UcOQKBVcyyzb4j0yLKoxR6xtR/xRVCKQ4t+silQAgzV/IhgPhbzDhEpo4nbyNpMtOXiD2121RmLGeKM1lW7g==}
+    engines: {node: '>= 20.19'}
 
-  '@restatedev/restate-sdk@1.8.0':
-    resolution: {integrity: sha512-I9tm3cVmvBadKzDBguqXBngLlB5nkk5sYOFO8y2MgwPJBbuYvoWiIStn+cyU2DVgaGjoou+afEF51VrxF2lXEA==}
-    engines: {node: '>= 18.13'}
+  '@restatedev/restate-sdk@1.9.1':
+    resolution: {integrity: sha512-8w6t7cG5mXMgI+YPxIuPuplVX12lKbgne1byzmkQtif9lpPT6gjd7ce1EmWrUtsD25WCL+lf4iKU/usfqaXQCg==}
+    engines: {node: '>= 20.19'}
 
   '@rolldown/binding-android-arm64@1.0.0-beta.29':
     resolution: {integrity: sha512-pDv7gg59Gdy80eFmMkEqXEaoJi3Y9W/a9T3z9M4t8Ma8aVXNldvSy9UgtlX7AK7DPqF8tULnmIZ2Z3rvGMz/NQ==}
@@ -3283,25 +3283,25 @@ snapshots:
     dependencies:
       quansync: 0.2.10
 
-  '@restatedev/restate-sdk-clients@1.8.0':
+  '@restatedev/restate-sdk-clients@1.9.1':
     dependencies:
-      '@restatedev/restate-sdk-core': 1.8.0
+      '@restatedev/restate-sdk-core': 1.9.1
 
-  '@restatedev/restate-sdk-core@1.8.0': {}
+  '@restatedev/restate-sdk-core@1.9.1': {}
 
-  '@restatedev/restate-sdk-testcontainers@1.8.0':
+  '@restatedev/restate-sdk-testcontainers@1.9.1':
     dependencies:
-      '@restatedev/restate-sdk': 1.8.0
-      '@restatedev/restate-sdk-clients': 1.8.0
+      '@restatedev/restate-sdk': 1.9.1
+      '@restatedev/restate-sdk-clients': 1.9.1
       apache-arrow: 18.1.0
       testcontainers: 10.28.0
     transitivePeerDependencies:
       - bare-buffer
       - supports-color
 
-  '@restatedev/restate-sdk@1.8.0':
+  '@restatedev/restate-sdk@1.9.1':
     dependencies:
-      '@restatedev/restate-sdk-core': 1.8.0
+      '@restatedev/restate-sdk-core': 1.9.1
 
   '@rolldown/binding-android-arm64@1.0.0-beta.29':
     optional: true
