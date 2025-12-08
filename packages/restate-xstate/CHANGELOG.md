@@ -1,5 +1,11 @@
 # @restatedev/xstate
 
+## 0.5.0
+
+### Minor Changes
+
+- Add an option to retry promises
+
 ## 0.4.0
 
 ### Minor Changes
