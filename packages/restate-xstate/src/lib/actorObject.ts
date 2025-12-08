@@ -360,7 +360,7 @@ export function actorObject<
 
         return persistedSnapshotWithTags(root);
       },
-      invokePromise: restate.handlers.object.shared(
+      invokePromiseRetry: restate.handlers.object.shared(
         async (
           ctx: restate.ObjectSharedContext<State>,
           {
@@ -370,6 +370,72 @@ export function actorObject<
             version,
           }: {
             self: SerialisableActorRef;
+            srcs: string[];
+            input: unknown;
+            version?: string;
+          },
+        ) => {
+          await validateStateMachineIsNotDisposed(ctx);
+
+          const systemName = ctx.key;
+
+          try {
+            const response = await ctx
+              .objectClient<
+                ActorObjectHandlers<LatestStateMachine | PreviousStateMachine>
+              >(api, systemName)
+              .invokePromise({
+                srcs,
+                input,
+                version,
+              });
+
+            void ctx
+              .objectClient<
+                ActorObjectHandlers<LatestStateMachine>
+              >(api, systemName)
+              .send({
+                source: self,
+                target: self,
+                event: {
+                  type: RESTATE_PROMISE_RESOLVE,
+                  data: response,
+                },
+              });
+          } catch (e) {
+            if (e instanceof restate.TerminalError) {
+              void ctx
+                .objectClient<
+                  ActorObjectHandlers<LatestStateMachine>
+                >(api, systemName)
+                .send({
+                  source: self,
+                  target: self,
+                  event: {
+                    type: RESTATE_PROMISE_REJECT,
+                    data: e.message,
+                  },
+                });
+            } else {
+              // pass through non terminal errors
+              throw e;
+            }
+          }
+        },
+      ),
+      invokePromise: restate.handlers.object.shared(
+        {
+          retryPolicy: options?.promiseRetryPolicy,
+        },
+        async (
+          ctx: restate.ObjectSharedContext<State>,
+          {
+            self,
+            srcs,
+            input,
+            version,
+          }: {
+            self?: SerialisableActorRef;
             srcs: string[];
             input: unknown;
             version?: string;
@@ -456,9 +522,12 @@ export function actorObject<
             }),
           );
 
-          // we use unawaited promises so the trace id stays the same
-          await resolvedPromise.then(
-            (response) => {
+          if (self) {
+            // non-retry case, we report to state machine and return
+
+            try {
+              const response = await resolvedPromise;
+
               void ctx
                 .objectClient<
                   ActorObjectHandlers<LatestStateMachine>
@@ -471,8 +540,10 @@ export function actorObject<
                     data: response,
                   },
                 });
-            },
-            (errorData: unknown) => {
+
+              // nothing relies on this response, we return it for the benefit of debugging
+              return response;
+            } catch (e) {
               void ctx
                 .objectClient<
                   ActorObjectHandlers<LatestStateMachine>
@@ -482,11 +553,25 @@ export function actorObject<
                   target: self,
                   event: {
                     type: RESTATE_PROMISE_REJECT,
-                    data: errorData,
+                    data: e,
                   },
                 });
-            },
-          );
+
+              // nothing relies on this error, but its helpful to see that the promise failed
+              if (e instanceof restate.TerminalError) {
+                throw e;
+              } else if (e instanceof Error) {
+                throw new restate.TerminalError(e.message);
+              } else {
+                throw new restate.TerminalError(String(e));
+              }
+            }
+          } else {
+            // if self is not provided, we just need to return the error and let the caller report back
+            // we cannot report as we might get killed by the retry policy
+
+            return await resolvedPromise;
+          }
         },
       ),
       cleanupState: restate.handlers.object.exclusive(

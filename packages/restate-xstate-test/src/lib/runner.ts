@@ -47,9 +47,7 @@ export async function createRestateTestActor<SnapshotType>(
   opts: RunMachineOptions,
 ): Promise<RunningMachine<SnapshotType>> {
   const env = await RestateTestEnvironment.start(
-    (restateServer) => {
-      restateServer.bind(opts.machine);
-    },
+    { services: [opts.machine] },
     () =>
       new RestateContainer().withEnvironment({
         RESTATE_DEFAULT_NUM_PARTITIONS: "2",
