@@ -597,6 +597,7 @@ function persistedSnapshotWithTags(
 ): SnapshotWithTags {
   const snapshot = persistedSnapshot ?? actor.getPersistedSnapshot();
   const machineSnapshot = actor.getSnapshot() as AnyMachineSnapshot;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- tags may be missing if xstate's _initState catches an error during initialization
   const tags = machineSnapshot.tags ? [...machineSnapshot.tags] : [];
   tags.sort();
 

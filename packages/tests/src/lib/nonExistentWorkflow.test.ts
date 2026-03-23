@@ -32,7 +32,7 @@ const simpleMachine = createMachine({
 
 describe("Non-existent workflow ID", () => {
   const machine = xstate("simple", simpleMachine);
-  let env: RestateTestEnvironment;
+  let env: RestateTestEnvironment | undefined;
   let client: clients.IngressClient<MachineApi>;
 
   afterAll(async () => {
