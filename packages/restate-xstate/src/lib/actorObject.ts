@@ -32,6 +32,7 @@ import { createActor } from "./createActor.js";
 import { createScheduledEventId, type RestateActorSystem } from "./system.js";
 import {
   checkIfStateMachineShouldBeDisposed,
+  validateStateMachineExists,
   validateStateMachineIsNotDisposed,
 } from "./cleanupState..js";
 
@@ -142,6 +143,7 @@ export function actorObject<
         },
       ): Promise<Snapshot<unknown> | undefined> => {
         await validateStateMachineIsNotDisposed(ctx);
+        await validateStateMachineExists(ctx);
         const systemName = ctx.key;
 
         if (!request) {
@@ -245,6 +247,7 @@ export function actorObject<
         request: { condition: string; awakeableId: string },
       ): Promise<void> => {
         await validateStateMachineIsNotDisposed(ctx);
+        await validateStateMachineExists(ctx);
 
         const systemName = ctx.key;
 
@@ -289,6 +292,7 @@ export function actorObject<
           },
         ) => {
           await validateStateMachineIsNotDisposed(ctx);
+          await validateStateMachineExists(ctx);
           validateCondition(request.condition);
 
           const systemName = ctx.key;
@@ -345,6 +349,7 @@ export function actorObject<
         ctx: restate.ObjectContext<State>,
       ): Promise<SnapshotWithTags> => {
         await validateStateMachineIsNotDisposed(ctx);
+        await validateStateMachineExists(ctx);
         const systemName = ctx.key;
 
         // no need to set the version here if we are just getting a snapshot
@@ -591,7 +596,8 @@ function persistedSnapshotWithTags(
   persistedSnapshot?: Snapshot<unknown>,
 ): SnapshotWithTags {
   const snapshot = persistedSnapshot ?? actor.getPersistedSnapshot();
-  const tags = [...(actor.getSnapshot() as AnyMachineSnapshot).tags];
+  const machineSnapshot = actor.getSnapshot() as AnyMachineSnapshot;
+  const tags = machineSnapshot.tags ? [...machineSnapshot.tags] : [];
   tags.sort();
 
   return {

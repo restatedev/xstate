@@ -14,6 +14,18 @@ export async function validateStateMachineIsNotDisposed(
   }
 }
 
+export async function validateStateMachineExists(
+  ctx: restate.ObjectContext<State> | restate.ObjectSharedContext<State>,
+) {
+  const snapshot = await ctx.get("snapshot");
+  if (snapshot == null) {
+    throw new restate.TerminalError(
+      "No state machine found for this workflow ID. Call 'create' first.",
+      { errorCode: 404 },
+    );
+  }
+}
+
 export async function checkIfStateMachineShouldBeDisposed<
   LatestStateMachine extends AnyStateMachine,
 >(

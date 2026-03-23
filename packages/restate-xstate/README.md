@@ -48,8 +48,8 @@ to be compatible with the state of machines that exist in Restate.
 Generally, XState makes it fairly easy to make backwards compatible state updates; ensure that states are not removed, and any new context values that you rely on are typed as optional.
 However, occasionally a significant workflow refactor is needed and its impossible to keep the definition compatible with the state of the existing machines.
 In this situation you can use the `versions` field of the options argument to the `xstate` function. This allows you to provide previous state machine definitions, which must have distinct state machine IDs.
-New state machines - ie, those created deliberately with `create` or implicitly when `send` operates on a machine with no state saved, will always use the latest code version.
-However, in-flight machines will run against the version they started on.
+State machines must first be created with `create` before interacting with them via `send`, `snapshot`, `subscribe` or `waitFor`. Calling any of these handlers on a workflow ID that hasn't been created will return a 404 error.
+New state machines will always use the latest code version, while in-flight machines will run against the version they started on.
 
 In [`examples/versioning/app.ts`](../examples/src/versioning/app.ts) there is an example of a machine that is versioned in this way. To try out this example:
 
