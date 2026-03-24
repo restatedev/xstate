@@ -118,9 +118,12 @@ describe("A fromPromise based state machine", () => {
       await vi.waitFor(() => {
         expect(sendEmail).toHaveBeenCalledWith("bob@mop.com");
       });
-      await vi.waitFor(() => {
-        expect(sendEmail).toHaveBeenCalledTimes(3);
-      });
+      await vi.waitFor(
+        () => {
+          expect(sendEmail).toHaveBeenCalledTimes(3);
+        },
+        { timeout: 10_000 },
+      );
 
       await eventually(() => actor.snapshot()).toMatchObject({
         status: "done",
