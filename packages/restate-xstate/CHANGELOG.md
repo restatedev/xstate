@@ -1,5 +1,19 @@
 # @restatedev/xstate
 
+## 0.5.1
+
+### Patch Changes
+
+- Fix TypeError when calling handlers on non-existent workflow ID (#41)
+
+  Require 'create' to be called before send, snapshot, subscribe, or
+  waitFor, aligning with standard xstate actor lifecycle semantics.
+  Handlers now return a 404 TerminalError with a clear message instead
+  of crashing with 'actor.getSnapshot().tags is not iterable'.
+
+  Also make persistedSnapshotWithTags defensive against missing tags
+  as a safety net.
+
 ## 0.5.0
 
 ### Minor Changes
