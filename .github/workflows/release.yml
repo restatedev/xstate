@@ -44,6 +44,7 @@ jobs:
     needs: check-version
     permissions:
       contents: write
+      id-token: write # Required for OIDC trusted publishing
     if: ${{ needs.check-version.outputs.need-to-release == 'true' }}
     steps:
       - run: echo "need-to-release -- ${{ needs.check-version.outputs.need-to-release }}"
@@ -54,23 +55,15 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
       - uses: pnpm/action-setup@v4
         with:
           version: 10.13.1
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
-      - name: Set up npm authentication
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-          echo "@restatedev:registry=https://registry.npmjs.org/" >> ~/.npmrc
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish npm package
         run: pnpm -r publish --ignore-scripts --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create a release
         id: create-release
         uses: ncipollo/release-action@v1
