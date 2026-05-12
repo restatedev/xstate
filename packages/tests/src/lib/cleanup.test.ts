@@ -11,7 +11,7 @@
 
 import { xstate } from "@restatedev/xstate";
 import { createMachine } from "xstate";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createRestateTestActor } from "@restatedev/xstate-test";
 import { wait } from "./eventually.js";
 
@@ -89,9 +89,12 @@ describe("Cleanup", () => {
         status: "done",
         value: "done",
       });
-      await wait(100);
-      await expect(() => machine.snapshot()).rejects.toThrow(
-        "The state machine has been disposed after reaching it's final state",
+      await vi.waitFor(
+        () =>
+          expect(() => machine.snapshot()).rejects.toThrow(
+            "The state machine has been disposed after reaching it's final state",
+          ),
+        { timeout: 5_000 },
       );
 
       /** Should not accept any events after termination */
@@ -128,9 +131,12 @@ describe("Cleanup", () => {
         value: "done",
       });
 
-      await wait(100);
-      await expect(() => machine.snapshot()).rejects.toThrow(
-        "The state machine has been disposed after reaching it's final state",
+      await vi.waitFor(
+        () =>
+          expect(() => machine.snapshot()).rejects.toThrow(
+            "The state machine has been disposed after reaching it's final state",
+          ),
+        { timeout: 5_000 },
       );
     },
   );

@@ -113,10 +113,11 @@ export async function createSystem<T extends ActorSystemInfo>(
 
       events[scheduledEventId] = scheduledEvent;
       ctx
-        .objectSendClient<
-          ActorObjectHandlers<AnyStateMachine>
-        >(api, systemName, { delay })
-        .send({ scheduledEvent, source, target, event });
+        .objectSendClient<ActorObjectHandlers<AnyStateMachine>>(api, systemName)
+        .send(
+          { scheduledEvent, source, target, event },
+          restate.SendOpts.from({ delay }),
+        );
 
       ctx.set("events", events);
     },

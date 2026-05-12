@@ -20,6 +20,13 @@ that uses cross-machine communication, delays, and Promise actors, all running i
 Most XState machines should work out of the box, but this is still experimental, so
 we haven't tested everything yet!
 
+## Compatibility
+
+`@restatedev/xstate@0.5.2`+ requires `@restatedev/restate-sdk` **>= 1.3.0**. If you
+are pinning a more recent SDK, you must upgrade to 0.5.2: with 0.5.0 / 0.5.1 paired
+against SDKs >= 1.12.0, XState `after` delayed transitions fire immediately instead
+of waiting for the configured delay.
+
 To try out this example:
 
 ```bash
