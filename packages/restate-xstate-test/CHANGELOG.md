@@ -1,5 +1,13 @@
 # @restatedev/xstate-test
 
+## 2.0.1
+
+### Patch Changes
+
+- Make xstate work with restatedev/restate-sdk >= 1.12.0
+- Updated dependencies
+  - @restatedev/xstate@0.5.2
+
 ## 2.0.0
 
 ### Patch Changes
