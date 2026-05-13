@@ -5,6 +5,11 @@
   "license": "MIT",
   "author": "Restate developers",
   "email": "code@restate.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/restatedev/xstate.git",
+    "directory": "packages/restate-xstate-test"
+  },
   "type": "module",
   "scripts": {
     "clean": "rm -rf dist && rm tsconfig.tsbuildinfo || true",
