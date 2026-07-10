@@ -11,5 +11,9 @@ export default defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      // These assertions carry XState event and context types into inference.
+      "@typescript-eslint/no-unnecessary-type-assertion": "off",
+    },
   }),
 ]);

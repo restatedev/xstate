@@ -59,8 +59,9 @@ export interface Subscription {
 
 export type SnapshotWithTags = Snapshot<unknown> & { tags: string[] };
 
-export interface ActorEventSender<TLogic extends AnyActorLogic>
-  extends Actor<TLogic> {
+export interface ActorEventSender<
+  TLogic extends AnyActorLogic,
+> extends Actor<TLogic> {
   _send: (event: AnyEventObject) => void;
 }
 

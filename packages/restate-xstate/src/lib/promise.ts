@@ -109,9 +109,10 @@ export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
 
       if (opts?.retry) {
         void rs.ctx
-          .objectClient<
-            ActorObjectHandlers<AnyStateMachine>
-          >(rs.api, rs.systemName)
+          .objectClient<ActorObjectHandlers<AnyStateMachine>>(
+            rs.api,
+            rs.systemName,
+          )
           .invokePromiseRetry({
             self: serialiseActorRef(self),
             srcs: actorSrc(self),
@@ -120,9 +121,10 @@ export function fromPromise<TOutput, TInput extends NonReducibleUnknown>(
           });
       } else {
         void rs.ctx
-          .objectClient<
-            ActorObjectHandlers<AnyStateMachine>
-          >(rs.api, rs.systemName)
+          .objectClient<ActorObjectHandlers<AnyStateMachine>>(
+            rs.api,
+            rs.systemName,
+          )
           .invokePromise({
             self: serialiseActorRef(self),
             srcs: actorSrc(self),

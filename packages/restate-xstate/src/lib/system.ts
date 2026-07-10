@@ -20,8 +20,9 @@ import type {
 } from "./types.js";
 import { serialiseActorRef } from "./utils.js";
 
-export interface RestateActorSystem<T extends ActorSystemInfo>
-  extends ActorSystem<T> {
+export interface RestateActorSystem<
+  T extends ActorSystemInfo,
+> extends ActorSystem<T> {
   _bookId: () => string;
   _register: (sessionId: string, actorRef: ActorRefEventSender) => string;
   _unregister: (actorRef: AnyActorRef) => void;

@@ -42,9 +42,10 @@ export async function checkIfStateMachineShouldBeDisposed<
 
   if (shouldCleanUp) {
     ctx
-      .objectSendClient<
-        ActorObjectHandlers<LatestStateMachine>
-      >(api, systemName)
+      .objectSendClient<ActorObjectHandlers<LatestStateMachine>>(
+        api,
+        systemName,
+      )
       .cleanupState(
         restate.SendOpts.from({
           delay: { milliseconds: finalStateTTL },

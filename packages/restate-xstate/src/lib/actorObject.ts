@@ -44,9 +44,7 @@ async function getOrSetVersion<
   latestVersion: LatestVersion,
 ): Promise<LatestVersion | PreviousVersion> {
   let version = (await ctx.get("version")) as
-    | LatestVersion
-    | PreviousVersion
-    | null;
+    LatestVersion | PreviousVersion | null;
   if (version == null) {
     version = latestVersion;
     ctx.set("version", version);
@@ -396,9 +394,10 @@ export function actorObject<
               });
 
             void ctx
-              .objectClient<
-                ActorObjectHandlers<LatestStateMachine>
-              >(api, systemName)
+              .objectClient<ActorObjectHandlers<LatestStateMachine>>(
+                api,
+                systemName,
+              )
               .send({
                 source: self,
                 target: self,
@@ -410,9 +409,10 @@ export function actorObject<
           } catch (e) {
             if (e instanceof restate.TerminalError) {
               void ctx
-                .objectClient<
-                  ActorObjectHandlers<LatestStateMachine>
-                >(api, systemName)
+                .objectClient<ActorObjectHandlers<LatestStateMachine>>(
+                  api,
+                  systemName,
+                )
                 .send({
                   source: self,
                   target: self,
@@ -534,9 +534,10 @@ export function actorObject<
               const response = await resolvedPromise;
 
               void ctx
-                .objectClient<
-                  ActorObjectHandlers<LatestStateMachine>
-                >(api, systemName)
+                .objectClient<ActorObjectHandlers<LatestStateMachine>>(
+                  api,
+                  systemName,
+                )
                 .send({
                   source: self,
                   target: self,
@@ -550,9 +551,10 @@ export function actorObject<
               return response;
             } catch (e) {
               void ctx
-                .objectClient<
-                  ActorObjectHandlers<LatestStateMachine>
-                >(api, systemName)
+                .objectClient<ActorObjectHandlers<LatestStateMachine>>(
+                  api,
+                  systemName,
+                )
                 .send({
                   source: self,
                   target: self,
@@ -684,7 +686,7 @@ class ConditionObserver implements Observer<AnyMachineSnapshot> {
         evaluateCondition(
           this.ctx,
           this.actor,
-          condition as Condition,
+          condition,
           subscription.awakeables,
         )
       ) {

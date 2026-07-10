@@ -1,17 +1,27 @@
 packages:
   - packages/*
 
+allowBuilds:
+  cpu-features: false
+  esbuild: false
+  protobufjs: false
+  ssh2: false
+
 catalog:
-  "@restatedev/restate-sdk": ^1.14.0
-  "@restatedev/restate-sdk-clients": ^1.14.0
-  "@restatedev/restate-sdk-testcontainers": ^1.14.0
+  "@restatedev/restate-sdk": ^1.16.1
+  "@restatedev/restate-sdk-clients": ^1.16.1
+  "@restatedev/restate-sdk-testcontainers": ^1.16.1
   xstate: ^5.20.1
 
-onlyBuiltDependencies:
-  - cpu-features
-  - esbuild
-  - protobufjs
-  - ssh2
+minimumReleaseAgeExclude:
+  - "@arethetypeswrong/cli@0.18.5"
+  - "@arethetypeswrong/core@0.18.5"
+  - "@restatedev/restate-sdk-clients@1.16.1"
+  - "@restatedev/restate-sdk-core@1.16.1"
+  - "@restatedev/restate-sdk-testcontainers@1.16.1"
+  - "@restatedev/restate-sdk@1.16.1"
+  - eslint-plugin-jsdoc@63.0.13
+  - prettier@3.9.5
 
 overrides:
   "@eslint/plugin-kit@<0.3.4": ">=0.3.4"
