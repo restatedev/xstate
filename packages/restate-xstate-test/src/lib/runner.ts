@@ -12,6 +12,7 @@
 import {
   RestateContainer,
   RestateTestEnvironment,
+  type TestEnvironmentOptions,
 } from "@restatedev/restate-sdk-testcontainers";
 import type { VirtualObjectDefinition } from "@restatedev/restate-sdk";
 import * as clients from "@restatedev/restate-sdk-clients";
@@ -45,9 +46,13 @@ export type RunningMachine<SnapshotType> = {
 
 export async function createRestateTestActor<SnapshotType>(
   opts: RunMachineOptions,
+  testEnvionmentOptions?: Pick<
+    TestEnvironmentOptions,
+    "alwaysReplay" | "disableRetries"
+  >,
 ): Promise<RunningMachine<SnapshotType>> {
   const env = await RestateTestEnvironment.start(
-    { services: [opts.machine] },
+    { services: [opts.machine], ...testEnvionmentOptions },
     () =>
       new RestateContainer().withEnvironment({
         RESTATE_DEFAULT_NUM_PARTITIONS: "2",

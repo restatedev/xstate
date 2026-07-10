@@ -49,9 +49,12 @@ describe("Simple count machine", () => {
 
     using machine = await createRestateTestActor<{
       context: { submittedAt: number };
-    }>({
-      machine: counter,
-    });
+    }>(
+      {
+        machine: counter,
+      },
+      { alwaysReplay: true, disableRetries: true },
+    );
 
     await machine.send({ type: "submit" });
 
