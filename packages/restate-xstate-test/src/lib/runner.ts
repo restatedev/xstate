@@ -25,7 +25,12 @@ export type MachineApi = {
 
   waitFor: (
     context: unknown,
-    args: { condition: string; event?: AnyEventObject },
+    args: {
+      condition: string;
+      event?: AnyEventObject;
+      timeout?: number;
+      idempotencyKey?: string;
+    },
   ) => Promise<unknown>;
 
   snapshot: (context: unknown) => Promise<unknown>;
@@ -40,7 +45,12 @@ export type RunMachineOptions = {
 export type RunningMachine<SnapshotType> = {
   send: (event: AnyEventObject) => Promise<SnapshotType>;
   snapshot(): Promise<SnapshotType>;
-  waitFor(condition: string, event?: AnyEventObject): Promise<SnapshotType>;
+  waitFor(
+    condition: string,
+    event?: AnyEventObject,
+    timeout?: number,
+    idempotencyKey?: string,
+  ): Promise<SnapshotType>;
   [Symbol.dispose](): void;
 };
 
@@ -58,6 +68,9 @@ export async function createRestateTestActor<SnapshotType>(
         RESTATE_DEFAULT_NUM_PARTITIONS: "2",
         RESTATE_ROCKSDB_TOTAL_MEMORY_SIZE: "64 MB",
         RESTATE_DISABLE_TELEMETRY: "true",
+        RESTATE_DEFAULT_RETRY_POLICY__ON_MAX_ATTEMPTS: "kill",
+        RESTATE_DEFAULT_RETRY_POLICY__MAX_ATTEMPTS: "1",
+        RESTATE_WORKER__INVOKER__INACTIVITY_TIMEOUT: "0s",
       }),
   );
 
@@ -76,8 +89,20 @@ export async function createRestateTestActor<SnapshotType>(
         return (await client.snapshot()) as SnapshotType;
       },
 
-      waitFor: async (condition: string, event?: AnyEventObject) => {
-        return (await client.waitFor({ condition, event })) as SnapshotType;
+      waitFor: async (
+        condition: string,
+        event?: AnyEventObject,
+        timeout?: number,
+        idempotencyKey?: string,
+      ) => {
+        return (await client.waitFor(
+          {
+            condition,
+            event,
+            timeout,
+          },
+          clients.rpc.opts({ idempotencyKey }),
+        )) as SnapshotType;
       },
 
       [Symbol.dispose]: () => {
