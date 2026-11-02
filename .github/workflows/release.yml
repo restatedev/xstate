@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.5.0
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
@@ -49,22 +49,22 @@ jobs:
     steps:
       - run: echo "need-to-release -- ${{ needs.check-version.outputs.need-to-release }}"
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.5.0
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v6.0.10
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
       - name: Publish npm package
         run: pnpm -r publish --ignore-scripts --access public
       - name: Create a release
         id: create-release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.21.0
         with:
           commit: ${{ github.sha }}
           makeLatest: true
